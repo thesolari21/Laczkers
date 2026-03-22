@@ -1,0 +1,463 @@
+{% extends "laczkerscup/base.html" %}
+{% block title %}{{ turniej.nazwa }} — FIFALeague{% endblock %}
+
+{# ══ HERO ══════════════════════════════════════════════════════════ #}
+{% block hero %}
+<section class="hero">
+  <div class="container">
+    <p class="hero-eyebrow">Aktualny turniej</p>
+    <h1>{{ turniej.nazwa }}</h1>
+    {% if turniej.data_start %}
+    <p class="hero-sub">
+      {{ turniej.data_start|date:"d.m.Y" }}
+      {% if turniej.data_koniec %} — {{ turniej.data_koniec|date:"d.m.Y" }}{% endif %}
+    </p>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+
+{% if brak_turnieju %}
+<div class="container py-5 text-center text-muted">
+  <i class="bi bi-calendar-x fs-1 mb-3 d-block" style="color:#444;"></i>
+  Brak turniejów w bazie. Dodaj pierwszy turniej w panelu admina.
+</div>
+{% else %}
+
+{# ══ STATYSTYKI — 7 kafelków ═══════════════════════════════════════ #}
+<div class="section-wrap">
+  <div class="row g-3">
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+        <div class="stat-val">{{ stats.gracze }}</div>
+        <div class="stat-lbl">Graczy</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-controller"></i></div>
+        <div class="stat-val">{{ stats.mecze }}</div>
+        <div class="stat-lbl">Rozegranych meczów</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-circle-fill" style="color:var(--yellow);"></i></div>
+        <div class="stat-val">{{ stats.gole }}</div>
+        <div class="stat-lbl">Goli łącznie</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-bullseye"></i></div>
+        <div class="stat-val">{{ stats.avg_goli }}</div>
+        <div class="stat-lbl">Śr. goli / mecz</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-shield-fill"></i></div>
+        <div class="stat-val">{{ stats.czyste_konta }}</div>
+        <div class="stat-lbl">Czyste konta</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-square-fill" style="color:#FFD700;"></i></div>
+        <div class="stat-val">{{ stats.zolte }}</div>
+        <div class="stat-lbl">Żółte kartki</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-square-fill" style="color:#e74c3c;"></i></div>
+        <div class="stat-val">{{ stats.czerwone }}</div>
+        <div class="stat-lbl">Czerwone kartki</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+{# ══ TABELE GRUPOWE + HARMONOGRAM ══════════════════════════════════ #}
+<div class="row g-4">
+
+  {# ETAPY — wszystkie poziomy od najwyższego w dół #}
+  <div class="col-lg-7">
+
+    {% if poziomy_etapow %}
+      {% for poziom_blok in poziomy_etapow %}
+
+        {# Pucharowy — jeden lub więcej etapów na tym poziomie #}
+        {% if poziom_blok.etapy.0.etap.typ == 'pucharowy' %}
+
+          {% for entry in poziom_blok.etapy %}
+          <div class="section-title">
+            <i class="bi bi-diagram-3-fill icon"></i>{{ entry.etap.nazwa }}
+          </div>
+          <div class="card-dark mb-4 p-3">
+            {% if entry.etap.obrazek %}
+              <img src="{{ entry.etap.obrazek.url }}" alt="{{ entry.etap.nazwa }}"
+                   style="width:100%; height:auto; border-radius:6px;">
+            {% else %}
+              <div style="background:#111; border:2px dashed #333; border-radius:8px;
+                          height:220px; display:flex; flex-direction:column;
+                          align-items:center; justify-content:center; color:#555;">
+                <i class="bi bi-diagram-3 mb-2" style="font-size:2.5rem;"></i>
+                <div style="font-size:.9rem;">Drabinka pojawi się wkrótce</div>
+                <div style="font-size:.75rem; margin-top:.3rem; color:#444;">{{ entry.etap.nazwa }}</div>
+              </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+        {# Grupowy — jeden etap to jedna tabela; kilka = zakładki #}
+        {% else %}
+
+          {% if poziom_blok.etapy|length == 1 %}
+            {# Tylko jedna grupa — bez zakładek #}
+            <div class="section-title">
+              <i class="bi bi-list-ol icon"></i>{{ poziom_blok.etapy.0.etap.nazwa }}
+            </div>
+            {% include "laczkerscup/_tabela_grupowa.html" with entry=poziom_blok.etapy.0 turniej=turniej %}
+
+          {% else %}
+            {# Kilka grup — zakładki przewijane w bok #}
+            <div class="section-title mb-1">
+              <i class="bi bi-list-ol icon"></i>Faza grupowa — poziom {{ poziom_blok.poziom }}
+            </div>
+            <div style="overflow-x:auto; white-space:nowrap; padding-bottom:.4rem; margin-bottom:.75rem;">
+              {% for entry in poziom_blok.etapy %}
+              <button class="btn btn-sm me-1 tab-grupa-btn"
+                      data-target="etap-{{ entry.etap.pk }}"
+                      style="{% if forloop.first %}background:var(--yellow);color:#000;{% else %}background:var(--black-4);color:#eee;{% endif %} border:none; white-space:nowrap;"
+                      onclick="pokazEtap('etap-{{ entry.etap.pk }}', this)">
+                {{ entry.etap.nazwa }}
+              </button>
+              {% endfor %}
+            </div>
+            {% for entry in poziom_blok.etapy %}
+            <div id="etap-{{ entry.etap.pk }}" class="etap-panel {% if not forloop.first %}d-none{% endif %}">
+              {% include "laczkerscup/_tabela_grupowa.html" with entry=entry turniej=turniej %}
+            </div>
+            {% endfor %}
+          {% endif %}
+
+        {% endif %}
+
+      {% endfor %}
+    {% else %}
+      <div class="section-title"><i class="bi bi-list-ol icon"></i>Etapy turnieju</div>
+      <div class="card-dark p-4 text-center text-muted">Brak etapów w tym turnieju.</div>
+    {% endif %}
+
+  </div>
+
+  {# HARMONOGRAM #}
+  <div class="col-lg-5">
+    <div class="section-title">
+      <i class="bi bi-calendar3 icon"></i>Harmonogram
+    </div>
+
+    {# Zakładki #}
+    <ul class="nav nav-tabs-dark mb-3" id="harmTab">
+      <li class="nav-item">
+        <a class="nav-link active" href="#" onclick="pokazHarm('rozegrane', this); return false;">
+          Rozegrane <span class="badge bg-secondary ms-1">{{ harmonogram.rozegrane|length }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" onclick="pokazHarm('nadchodzace', this); return false;">
+          Nadchodzące <span class="badge bg-secondary ms-1">{{ harmonogram.nadchodzace|length }}</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" onclick="pokazHarm('wszystkie', this); return false;">
+          Wszystkie
+        </a>
+      </li>
+    </ul>
+
+    {# Rozegrane #}
+    <div id="harm-rozegrane" class="harm-panel">
+      {% for mecz in harmonogram.rozegrane|slice:":5" %}
+      {% include "laczkerscup/_mecz_card.html" %}
+      {% empty %}
+      <p class="text-muted text-center py-3">Brak rozegranych meczów.</p>
+      {% endfor %}
+      {% if harmonogram.rozegrane|length > 10 %}
+      <div id="harm-rozegrane-rest" class="d-none">
+        {% for mecz in harmonogram.rozegrane|slice:"5:" %}
+        {% include "laczkerscup/_mecz_card.html" %}
+        {% endfor %}
+      </div>
+      <button class="btn btn-sm btn-outline-secondary w-100 mt-2"
+              onclick="rozwinHarm('rozegrane')">
+        Pokaż wszystkie ({{ harmonogram.rozegrane|length }})
+      </button>
+      {% endif %}
+    </div>
+
+    {# Nadchodzące #}
+    <div id="harm-nadchodzace" class="harm-panel d-none">
+      {% for mecz in harmonogram.nadchodzace|slice:":5" %}
+      {% include "laczkerscup/_mecz_card.html" %}
+      {% empty %}
+      <p class="text-muted text-center py-3">Brak zaplanowanych meczów.</p>
+      {% endfor %}
+      {% if harmonogram.nadchodzace|length > 10 %}
+      <div id="harm-nadchodzace-rest" class="d-none">
+        {% for mecz in harmonogram.nadchodzace|slice:"5:" %}
+        {% include "laczkerscup/_mecz_card.html" %}
+        {% endfor %}
+      </div>
+      <button class="btn btn-sm btn-outline-secondary w-100 mt-2"
+              onclick="rozwinHarm('nadchodzace')">
+        Pokaż wszystkie ({{ harmonogram.nadchodzace|length }})
+      </button>
+      {% endif %}
+    </div>
+
+    {# Wszystkie #}
+    <div id="harm-wszystkie" class="harm-panel d-none">
+      {% for mecz in harmonogram.wszystkie|slice:":5" %}
+      {% include "laczkerscup/_mecz_card.html" %}
+      {% empty %}
+      <p class="text-muted text-center py-3">Brak meczów.</p>
+      {% endfor %}
+      {% if harmonogram.wszystkie|length > 10 %}
+      <div id="harm-wszystkie-rest" class="d-none">
+        {% for mecz in harmonogram.wszystkie|slice:"5:" %}
+        {% include "laczkerscup/_mecz_card.html" %}
+        {% endfor %}
+      </div>
+      <button class="btn btn-sm btn-outline-secondary w-100 mt-2"
+              onclick="rozwinHarm('wszystkie')">
+        Pokaż wszystkie ({{ harmonogram.wszystkie|length }})
+      </button>
+      {% endif %}
+    </div>
+
+    {# Kibice #}
+    <div class="section-title mt-4">
+      <i class="bi bi-heart-fill icon" style="color:#e74c3c;"></i>Zawodnicy
+    </div>
+    <div class="card-dark">
+      <div class="table-responsive">
+        <table class="table table-sm mb-0" style="color:#eee;">
+          <thead>
+            <tr style="background:var(--black-3); color:#ccc; font-size:.82rem;">
+              <th class="ps-3">Gracz</th>
+              <th>Gra zespołem</th>
+              <th>Kibicuje</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in kibice %}
+            <tr>
+              <td class="ps-3 fw-semibold">
+                <a href="{% url 'laczkerscup:gracz_turniej' turniej.pk u.gracz.pk %}"
+                   style="color:inherit; text-decoration:none;">
+                  {{ u.gracz.display_name }}
+                </a>
+              </td>
+              <td>{{ u.zespol }}</td>
+              <td>
+                {% if u.ulubiony_klub %}
+                  <span style="color:var(--yellow);">{{ u.ulubiony_klub }}</span>
+                {% else %}
+                  <span class="text-muted" style="font-size:.82rem;">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center py-3" style="color:#666;">Brak uczestników.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>{# /.row #}
+
+<hr class="divider" />
+
+{# ══ NAGRODY INDYWIDUALNE ══════════════════════════════════════════ #}
+<div class="section-title">
+  <i class="bi bi-award-fill icon"></i>Klasyfikacje
+</div>
+
+<div class="row g-4 mb-4">
+
+  {# Król strzelców #}
+  <div class="col-md-3">
+    <div class="card-dark h-100">
+      <div class="card-dark-header">
+        <i class="bi bi-bullseye me-2" style="color:var(--yellow);"></i>Król strzelców
+        <small style="font-size:.7rem; color:#bbb;">najwięcej bramek</small>
+      </div>
+      {% if nagrody.krol %}
+      <table class="table table-sm mb-0" style="color:#eee;">
+        <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+          <th class="ps-3" style="width:28px;">#</th>
+          <th>Gracz</th>
+          <th class="text-center">Gole</th>
+          <th class="text-center">M</th>
+        </tr></thead>
+        <tbody>
+          {% for r in nagrody.krol %}
+          <tr>
+            <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
+            <td>{{ r.gracz.display_name }}</td>
+            <td class="text-center fw-bold" style="color:var(--yellow);">{{ r.gole }}</td>
+            <td class="text-center text-muted">{{ r.mecze }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted text-center py-3 mb-0">Brak danych</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Murarz #}
+  <div class="col-md-3">
+    <div class="card-dark h-100">
+      <div class="card-dark-header">
+        <i class="bi bi-shield-fill me-2" style="color:#3498db;"></i>Murarz
+        <small style="font-size:.7rem; color:#bbb;">najmniej straconych</small>
+      </div>
+      {% if nagrody.murarz %}
+      <table class="table table-sm mb-0" style="color:#eee;">
+        <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+          <th class="ps-3" style="width:28px;">#</th>
+          <th>Gracz</th>
+          <th class="text-center">G-</th>
+          <th class="text-center">M</th>
+        </tr></thead>
+        <tbody>
+          {% for r in nagrody.murarz %}
+          <tr>
+            <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
+            <td>{{ r.gracz.display_name }}</td>
+            <td class="text-center fw-bold" style="color:#3498db;">{{ r.stracone }}</td>
+            <td class="text-center text-muted">{{ r.mecze }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted text-center py-3 mb-0">Brak danych</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Kosiarz #}
+  <div class="col-md-3">
+    <div class="card-dark h-100">
+      <div class="card-dark-header">
+        <i class="bi bi-emoji-angry-fill me-2" style="color:#e74c3c;"></i>Kosiarz
+        <small style="font-size:.7rem; color:#bbb;">żółta=1pkt, czerwona=2pkt</small>
+      </div>
+      {% if nagrody.kosiarz %}
+      <table class="table table-sm mb-0" style="color:#eee;">
+        <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+          <th class="ps-3" style="width:28px;">#</th>
+          <th>Gracz</th>
+          <th class="text-center">Pkt</th>
+          <th class="text-center">🟨</th>
+          <th class="text-center">🟥</th>
+        </tr></thead>
+        <tbody>
+          {% for r in nagrody.kosiarz %}
+          <tr>
+            <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
+            <td>{{ r.gracz.display_name }}</td>
+            <td class="text-center fw-bold" style="color:#e74c3c;">{{ r.punkty_kartek }}</td>
+            <td class="text-center text-muted">{{ r.zolte }}</td>
+            <td class="text-center text-muted">{{ r.czerwone }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted text-center py-3 mb-0">Brak danych</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Wierny kibic #}
+  <div class="col-md-3">
+    <div class="card-dark h-100">
+      <div class="card-dark-header">
+        <i class="bi bi-trophy-fill me-2" style="color:var(--yellow);"></i>Wierny kibic
+        <small style="font-size:.7rem; color:#bbb;">ranking klubów</small>
+      </div>
+      <table class="table table-sm mb-0" style="color:#eee;">
+        <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+          <th class="ps-3" style="width:28px;">#</th>
+          <th>Klub</th>
+          <th class="text-center">Pkt</th>
+          <th class="text-center">%</th>
+        </tr></thead>
+        <tbody>
+          {% for r in klasyfikacja_klubowa %}
+          <tr>
+            <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
+            <td>{{ r.klub }}</td>
+            <td class="text-center text-muted" style="font-size:.8rem;">{{ r.zdobyte }}/{{ r.mozliwe }}</td>
+            <td class="text-center fw-bold">
+              <span style="color:{% if r.wspolczynnik >= 60 %}#2ecc71{% elif r.wspolczynnik >= 40 %}var(--yellow){% else %}#e74c3c{% endif %};">
+                {{ r.wspolczynnik }}%
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center py-3" style="color:#666;">Brak danych</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endif %}{# brak_turnieju #}
+
+<script>
+function pokazEtap(id, btn) {
+  // Ukryj tylko panele w tym samym zestawie zakładek (rodzic btn)
+  const kontener = btn.closest('.mb-4, div').parentElement;
+  kontener.querySelectorAll('.etap-panel').forEach(el => el.classList.add('d-none'));
+  document.getElementById(id).classList.remove('d-none');
+  // Resetuj przyciski w tym samym wierszu
+  btn.closest('div').querySelectorAll('.tab-grupa-btn').forEach(b => {
+    b.style.background = 'var(--black-4)';
+    b.style.color = '#eee';
+  });
+  btn.style.background = 'var(--yellow)';
+  btn.style.color = '#000';
+}
+
+function pokazHarm(typ, link) {
+  document.querySelectorAll('.harm-panel').forEach(el => el.classList.add('d-none'));
+  document.getElementById('harm-' + typ).classList.remove('d-none');
+  document.querySelectorAll('#harmTab .nav-link').forEach(l => l.classList.remove('active'));
+  link.classList.add('active');
+}
+
+function rozwinHarm(typ) {
+  const rest = document.getElementById('harm-' + typ + '-rest');
+  const btn  = event.currentTarget;
+  rest.classList.remove('d-none');
+  btn.remove();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+<div class="card-dark mb-4 tabela-grupowa">
+  <div class="table-responsive">
+    <table class="table standings-table mb-0">
+      <thead>
+        <tr>
+          <th class="text-center">#</th>
+          <th>Gracz</th>
+          <th class="text-center" title="Mecze">M</th>
+          <th class="text-center" title="Bilans W-R-P">Bilans</th>
+          <th class="text-center" title="Bramki zdobyte">G+</th>
+          <th class="text-center" title="Bramki stracone">G-</th>
+          <th class="text-center" title="Forma">Forma</th>
+          <th class="text-center" title="Punkty">PKT</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for w in entry.wiersze %}
+        <tr class="pos-{{ forloop.counter }}">
+          <td class="pos-num">{{ forloop.counter }}</td>
+          <td class="team-name">
+            <a href="{% url 'laczkerscup:gracz_turniej' turniej.pk w.gracz.pk %}"
+               style="color:inherit; text-decoration:none;">
+              {{ w.gracz.display_name }}
+            </a>
+          </td>
+          <td class="text-center">{{ w.mecze }}</td>
+          <td class="text-center" style="font-size:.85rem; letter-spacing:1px;">
+            <span style="color:#2ecc71;">{{ w.wygrane }}</span>-<span style="color:#aaa;">{{ w.remisy }}</span>-<span style="color:#e74c3c;">{{ w.przegrane }}</span>
+          </td>
+          <td class="text-center">{{ w.gole_za }}</td>
+          <td class="text-center">{{ w.gole_str }}</td>
+          <td>
+            {% for r in w.forma %}
+              {% if r == 'W' %}<span class="form-badge form-w">W</span>
+              {% elif r == 'R' %}<span class="form-badge form-d">R</span>
+              {% else %}<span class="form-badge form-l">P</span>
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td class="text-center pts">{{ w.punkty }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-3" style="color:#666;">
+            Brak rozegranych meczów
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

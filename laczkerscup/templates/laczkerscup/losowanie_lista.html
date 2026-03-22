@@ -1,0 +1,63 @@
+{% extends "laczkerscup/base.html" %}
+{% block title %}Historia losowań ELO{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 860px;">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1" style="color:var(--yellow); font-family:var(--font-display);">
+        <i class="bi bi-clock-history me-2"></i>Historia losowań ELO
+      </h2>
+      <p class="text-muted mb-0">Wszystkie zapisane sesje losowania.</p>
+    </div>
+    <a href="{% url 'laczkerscup:losowanie_formularz' %}" class="btn fw-bold"
+       style="background:var(--yellow); color:#000; border:none;">
+      <i class="bi bi-plus me-1"></i>Nowe losowanie
+    </a>
+  </div>
+
+  {% if losowania %}
+  <div class="card" style="background:var(--black-3); border:1px solid var(--black-5);">
+    <table class="table table-hover mb-0" style="color:#eee;">
+      <thead>
+        <tr style="background:var(--black-4); color:#aaa; font-size:.85rem;">
+          <th class="ps-4">#</th>
+          <th>Nazwa</th>
+          <th>Data</th>
+          <th class="text-center">Kolejki</th>
+          <th class="text-center">Graczy</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in losowania %}
+        <tr style="border-color:var(--black-5);">
+          <td class="ps-4 text-muted">{{ l.pk }}</td>
+          <td class="fw-semibold">{{ l }}</td>
+          <td class="text-muted small">{{ l.data|date:"d.m.Y H:i" }}</td>
+          <td class="text-center"><span class="badge bg-secondary">{{ l.liczba_kolejek }}</span></td>
+          <td class="text-center text-muted">{{ l.uczestnicy.count }}</td>
+          <td class="text-end pe-3">
+            <a href="{% url 'laczkerscup:losowanie_wyniki' l.pk %}"
+               class="btn btn-sm btn-outline-warning">
+              <i class="bi bi-eye me-1"></i>Wyniki
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="background:var(--black-3); border:1px dashed #444;">
+    <div class="card-body text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-2 mb-2 d-block" style="color:#555;"></i>
+      Brak losowań. <a href="{% url 'laczkerscup:losowanie_formularz' %}"
+      style="color:var(--yellow);">Utwórz pierwsze</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

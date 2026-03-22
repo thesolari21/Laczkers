@@ -1,0 +1,220 @@
+{% extends "laczkerscup/base.html" %}
+{% block title %}Generator Szwajcarski{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:960px;">
+
+  <h2 class="fw-bold mb-1" style="color:var(--yellow); font-family:var(--font-display);">
+    <i class="bi bi-diagram-2-fill me-2"></i>System Szwajcarski
+  </h2>
+  <p style="color:#ccc;" class="mb-4">Generuj pary kolejka po kolejce na podstawie aktualnej tabeli punktowej.</p>
+
+  {# ── WYBÓR TURNIEJU ─────────────────────────────────────────────── #}
+  <form method="get" class="mb-4">
+    <div class="d-flex gap-2 align-items-end flex-wrap">
+      <div style="min-width:280px;">
+        <label class="form-label text-light fw-semibold mb-1">Turniej</label>
+        <select name="turniej" class="form-select"
+                style="background:var(--black-5); border-color:#444; color:#eee;"
+                onchange="this.form.submit()">
+          <option value="">— wybierz turniej —</option>
+          {% for t in turnieje %}
+          <option value="{{ t.pk }}" {% if turniej and turniej.pk == t.pk %}selected{% endif %}>
+            {{ t.nazwa }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </form>
+
+  {% if turniej %}
+
+  {# ── INFO O TURNIEJU ────────────────────────────────────────────── #}
+  <div class="row g-3 mb-4">
+    <div class="col-auto">
+      <div class="stat-card" style="min-width:120px;">
+        <div class="stat-val">{{ tabela|length }}</div>
+        <div class="stat-lbl">Graczy</div>
+      </div>
+    </div>
+    <div class="col-auto">
+      <div class="stat-card" style="min-width:120px;">
+        <div class="stat-val">{{ kolejki_w_turnieju }}</div>
+        <div class="stat-lbl">Kolejek w turnieju</div>
+      </div>
+    </div>
+    <div class="col-auto">
+      <div class="stat-card" style="min-width:120px;">
+        <div class="stat-val" style="color:var(--yellow);">{{ kolejki|length }}</div>
+        <div class="stat-lbl">Kolejki szwajcara</div>
+      </div>
+    </div>
+    <div class="col-auto">
+      <div class="stat-card" style="min-width:120px;">
+        <div class="stat-val" style="color:var(--yellow);">{{ maks }}</div>
+        <div class="stat-lbl">Maks. kolejek</div>
+      </div>
+    </div>
+    <div class="col-auto">
+      <div class="stat-card" style="min-width:120px;">
+        <div class="stat-val" {% if nastepna > maks %}style="color:#e74c3c;"{% endif %}>
+          {% if nastepna > maks %}—{% else %}{{ nastepna }}{% endif %}
+        </div>
+        <div class="stat-lbl">Następna kolejka</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── BŁĄD ───────────────────────────────────────────────────────── #}
+  {% if blad %}
+  <div class="alert mb-4" style="background:#2a0000; border:1px solid #c0392b; color:#ff6b6b; border-radius:8px;">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ blad }}
+  </div>
+  {% endif %}
+
+  <div class="row g-4">
+
+    {# LEWA: tabela punktowa + przycisk generowania #}
+    <div class="col-lg-5">
+
+      <div class="card-dark mb-3">
+        <div class="card-dark-header" style="color:var(--yellow);">
+          <i class="bi bi-list-ol me-2"></i>Aktualna tabela
+        </div>
+        <table class="table table-sm mb-0" style="color:#eee;">
+          <thead>
+            <tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+              <th class="ps-3" style="width:32px;">#</th>
+              <th>Gracz</th>
+              <th class="text-center">PKT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gracz, pkt in tabela %}
+            <tr>
+              <td class="ps-3 text-muted">{{ forloop.counter }}</td>
+              <td>{{ gracz.display_name }}</td>
+              <td class="text-center fw-bold" style="color:var(--yellow);">{{ pkt }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center py-3" style="color:#666;">
+                Brak uczestników w turnieju
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {# Przycisk generowania #}
+      {% if tabela and nastepna <= maks %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="turniej" value="{{ turniej.pk }}">
+        <button type="submit" class="btn w-100 fw-bold py-2"
+                style="background:var(--yellow); color:#000; border:none; font-size:1rem;">
+          <i class="bi bi-shuffle me-2"></i>Generuj kolejkę {{ nastepna }}
+        </button>
+      </form>
+      {% elif nastepna > maks %}
+      <div class="card-dark p-3 text-center" style="border-color:#555;">
+        <i class="bi bi-check-circle-fill me-2" style="color:#2ecc71;"></i>
+        <span style="color:#ccc;">Wszystkie kolejki rozegrane</span>
+      </div>
+      {% endif %}
+
+    </div>
+
+    {# PRAWA: historia kolejek #}
+    <div class="col-lg-7">
+
+      {% if kolejki %}
+      <div class="card-dark">
+        <div class="card-dark-header" style="color:var(--yellow);">
+          <i class="bi bi-clock-history me-2"></i>Historia kolejek
+        </div>
+
+        {# Zakładki kolejek #}
+        <div style="overflow-x:auto; white-space:nowrap; padding:.5rem .75rem 0;">
+          {% for k in kolejki %}
+          <button class="btn btn-sm me-1 mb-2 szwajcar-tab"
+                  onclick="pokazKolejke('k{{ k.numer }}', this)"
+                  style="{% if forloop.last %}background:var(--yellow);color:#000;{% else %}background:var(--black-4);color:#eee;{% endif %} border:none;">
+            Kolejka {{ k.numer }}
+          </button>
+          {% endfor %}
+        </div>
+
+        {# Zawartość kolejek #}
+        {% for k in kolejki %}
+        <div id="k{{ k.numer }}" class="szwajcar-panel {% if not forloop.last %}d-none{% endif %} p-3">
+          <table class="table table-sm mb-0" style="color:#eee; font-size:.9rem;">
+            <thead>
+              <tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+                <th class="ps-2">Gracz A</th>
+                <th class="text-center" style="width:40px;">vs</th>
+                <th>Gracz B</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for para in k.pary.all %}
+              <tr>
+                <td class="ps-2 fw-semibold">{{ para.gracz_a.display_name }}</td>
+                <td class="text-center text-muted">
+                  {% if para.gracz_b %}vs{% else %}<span style="color:#FF8F00;">BYE</span>{% endif %}
+                </td>
+                <td>
+                  {% if para.gracz_b %}
+                    {{ para.gracz_b.display_name }}
+                  {% else %}
+                    <span style="color:#FF8F00; font-size:.8rem;">wolny los (+3 pkt)</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {# Usuń tylko ostatnią kolejkę #}
+          {% if forloop.last %}
+          <div class="text-end mt-2">
+            <a href="{% url 'laczkerscup:szwajcar_usun' k.pk %}"
+               onclick="return confirm('Usunąć kolejkę {{ k.numer }}?')"
+               class="btn btn-sm btn-outline-danger" style="font-size:.75rem;">
+              <i class="bi bi-trash me-1"></i>Usuń tę kolejkę
+            </a>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+      </div>
+      {% else %}
+      <div class="card-dark p-4 text-center" style="border:1px dashed #444;">
+        <i class="bi bi-diagram-2 mb-2 d-block" style="font-size:2rem; color:#555;"></i>
+        <span style="color:#666;">Brak wygenerowanych kolejek</span><br>
+        <small style="color:#555;">Kliknij "Generuj kolejkę 1" aby zacząć</small>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {% endif %}{# turniej #}
+</div>
+
+<script>
+function pokazKolejke(id, btn) {
+  document.querySelectorAll('.szwajcar-panel').forEach(el => el.classList.add('d-none'));
+  document.getElementById(id).classList.remove('d-none');
+  document.querySelectorAll('.szwajcar-tab').forEach(b => {
+    b.style.background = 'var(--black-4)';
+    b.style.color = '#eee';
+  });
+  btn.style.background = 'var(--yellow)';
+  btn.style.color = '#000';
+}
+</script>
+{% endblock %}

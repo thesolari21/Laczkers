@@ -1,0 +1,117 @@
+{% extends "laczkerscup/base.html" %}
+{% block title %}Losowanie ELO{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 860px;">
+
+  <h2 class="fw-bold mb-1" style="color: var(--yellow); font-family: var(--font-display);">
+    <i class="bi bi-shuffle me-2"></i>Losowanie ELO
+  </h2>
+  <p style="color:#ccc;" class="mb-4">Wybierz graczy, przypisz do koszyków i wygeneruj harmonogram.</p>
+
+  {% if blad %}
+  <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ blad }}</div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- Ustawienia -->
+    <div class="card mb-4" style="background:var(--black-3); border:1px solid var(--black-5);">
+      <div class="card-header" style="background:var(--black-4); border-bottom:1px solid var(--black-5);">
+        <h6 class="mb-0 fw-bold" style="color:var(--yellow);"><i class="bi bi-gear me-2"></i>Ustawienia</h6>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-7">
+            <label class="form-label text-light fw-semibold">Nazwa <small style="color:#aaa;">(opcjonalna)</small></label>
+            <input type="text" name="nazwa" class="form-control"
+                   style="background:var(--black-5); border-color:#444; color:#eee;"
+                   placeholder="np. Turniej Wiosna 2025">
+          </div>
+          <div class="col-md-5">
+            <label class="form-label text-light fw-semibold">Liczba kolejek</label>
+            <div class="d-flex gap-3 mt-2">
+              {% for i in "1234" %}
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="liczba_kolejek"
+                       id="k{{ i }}" value="{{ i }}" {% if i == "2" %}checked{% endif %}>
+                <label class="form-check-label text-light" for="k{{ i }}">{{ i }}</label>
+              </div>
+              {% endfor %}
+            </div>
+            <small style="color:#ccc;" class="d-block mt-1">Nieparzyste: R↔N &nbsp;|&nbsp; Parzyste: R↔R / N↔N</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wybór graczy -->
+    <div class="row g-4 mb-4">
+
+      <div class="col-md-6">
+        <div class="card h-100" style="background:var(--black-3); border:2px solid #1565C0;">
+          <div class="card-header d-flex justify-content-between" style="background:#1565C0;">
+            <span class="fw-bold text-white"><i class="bi bi-star-fill me-1"></i>Rozstawieni (R)</span>
+            <span class="badge bg-dark" id="cnt-R">0</span>
+          </div>
+          <div class="card-body p-2" style="max-height:380px; overflow-y:auto;">
+            {% for g in gracze %}
+            <div class="form-check px-3 py-1 rounded mb-1" style="cursor:pointer;">
+              <input class="form-check-input" type="checkbox" name="gracze_R"
+                     value="{{ g.pk }}" id="R{{ g.pk }}" onchange="odswiezLiczniki()">
+              <label class="form-check-label text-light w-100" for="R{{ g.pk }}" style="cursor:pointer;">
+                {{ g.display_name }}
+              </label>
+            </div>
+            {% empty %}
+            <p style="color:#aaa;" class="p-3 mb-0">Brak aktywnych graczy.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card h-100" style="background:var(--black-3); border:2px solid #2E7D32;">
+          <div class="card-header d-flex justify-content-between" style="background:#2E7D32;">
+            <span class="fw-bold text-white"><i class="bi bi-person-fill me-1"></i>Nierozstawieni (N)</span>
+            <span class="badge bg-dark" id="cnt-N">0</span>
+          </div>
+          <div class="card-body p-2" style="max-height:380px; overflow-y:auto;">
+            {% for g in gracze %}
+            <div class="form-check px-3 py-1 rounded mb-1" style="cursor:pointer;">
+              <input class="form-check-input" type="checkbox" name="gracze_N"
+                     value="{{ g.pk }}" id="N{{ g.pk }}" onchange="odswiezLiczniki()">
+              <label class="form-check-label text-light w-100" for="N{{ g.pk }}" style="cursor:pointer;">
+                {{ g.display_name }}
+              </label>
+            </div>
+            {% empty %}
+            <p style="color:#aaa;" class="p-3 mb-0">Brak aktywnych graczy.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <button type="submit" class="btn btn-lg fw-bold px-5"
+            style="background:var(--yellow); color:#000; border:none;">
+      <i class="bi bi-shuffle me-2"></i>Generuj losowanie
+    </button>
+    <a href="{% url 'laczkerscup:losowanie_lista' %}" class="btn btn-outline-secondary btn-lg ms-2">
+      <i class="bi bi-clock-history me-1"></i>Historia
+    </a>
+
+  </form>
+</div>
+
+<script>
+function odswiezLiczniki() {
+  document.getElementById('cnt-R').textContent =
+    document.querySelectorAll('input[name="gracze_R"]:checked').length;
+  document.getElementById('cnt-N').textContent =
+    document.querySelectorAll('input[name="gracze_N"]:checked').length;
+}
+</script>
+{% endblock %}

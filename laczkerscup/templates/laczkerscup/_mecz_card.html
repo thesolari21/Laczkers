@@ -1,0 +1,35 @@
+<div class="match-card">
+  <div class="match-round" style="font-size:.7rem; color:var(--text-muted); margin-bottom:.25rem;">
+    {{ mecz.etap.nazwa }}{% if mecz.opis %} · {{ mecz.opis }}{% endif %}
+    {% if mecz.status == 'wolny_los' %} · <span style="color:#aaa;">Wolny los</span>{% endif %}
+  </div>
+  <div class="match-teams">
+    <a href="{% url 'laczkerscup:gracz_turniej' turniej.pk mecz.gracz_a.pk %}"
+       class="match-team" style="text-decoration:none; color:inherit;">
+      {{ mecz.gracz_a.display_name }}
+    </a>
+    {% if mecz.status == 'rozegrany' %}
+      <span class="match-score">{{ mecz.gole_a }} — {{ mecz.gole_b }}</span>
+    {% elif mecz.status == 'wolny_los' %}
+      <span class="match-score" style="color:#aaa; font-size:.9rem;">BYE</span>
+    {% else %}
+      <span class="match-score upcoming">vs</span>
+    {% endif %}
+    <span class="match-team away">
+      {% if mecz.gracz_b %}
+        <a href="{% url 'laczkerscup:gracz_turniej' turniej.pk mecz.gracz_b.pk %}"
+           style="text-decoration:none; color:inherit;">
+          {{ mecz.gracz_b.display_name }}
+        </a>
+      {% else %}—{% endif %}
+    </span>
+  </div>
+  {% if mecz.status == 'rozegrany' and mecz.zwyciezca %}
+  <div style="font-size:.7rem; color:var(--text-muted); margin-top:.2rem; text-align:center;">
+    {% if mecz.zwyciezca == 'remis' %}Remis
+    {% elif mecz.zwyciezca == 'A' %}Wygrał {{ mecz.gracz_a.display_name }}
+    {% elif mecz.zwyciezca == 'B' and mecz.gracz_b %}Wygrał {{ mecz.gracz_b.display_name }}
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

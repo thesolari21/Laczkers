@@ -1,0 +1,105 @@
+{% extends "laczkerscup/base.html" %}
+
+{% block title %}{{ player }} — Historia ELO{% endblock %}
+
+{% block hero %}
+<section class="hero">
+  <div class="container">
+    <p class="hero-eyebrow">Historia meczów ELO</p>
+    <h1><span>{{ player.display_name }}</span></h1>
+    {% if player.nickname %}
+      <p class="hero-sub">{{ player.first_name }} {{ player.last_name }}</p>
+    {% endif %}
+    <a href="{% url 'laczkerscup:elo' %}" style="color:var(--yellow);font-size:.85rem;">
+      ← Wróć do rankingu
+    </a>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="section-wrap">
+  <div class="section-title">
+    <i class="bi bi-clock-history icon"></i>Historia meczów
+  </div>
+
+  <div class="card-dark">
+    <div class="table-responsive">
+      <table class="table standings-table mb-0">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Przeciwnik</th>
+            <th class="text-center">Wynik</th>
+            <th class="text-center">Rating przed</th>
+            <th class="text-center">Zmiana</th>
+            <th class="text-center">Rating po</th>
+            <th>Komentarz</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in history %}
+          <tr>
+            <td style="white-space:nowrap;">{{ entry.match.date }}</td>
+
+            {# Przeciwnik — z linkiem do jego historii #}
+            <td class="team-name">
+              {% if entry.match.player_a == player %}
+                <a href="{% url 'laczkerscup:elo_history' entry.match.player_b.id %}"
+                   style="color:inherit;text-decoration:none;">
+                  {{ entry.match.player_b }}
+                </a>
+              {% else %}
+                <a href="{% url 'laczkerscup:elo_history' entry.match.player_a.id %}"
+                   style="color:inherit;text-decoration:none;">
+                  {{ entry.match.player_a }}
+                </a>
+              {% endif %}
+            </td>
+
+            {# Wynik meczu dla tego gracza #}
+            <td class="text-center">
+              {% if entry.match.result == 'D' %}
+                <span style="color:#888;font-weight:700;">Remis</span>
+              {% elif entry.match.result == 'A' and entry.match.player_a == player %}
+                <span style="color:#1e7e34;font-weight:700;">Wygrana</span>
+              {% elif entry.match.result == 'B' and entry.match.player_b == player %}
+                <span style="color:#1e7e34;font-weight:700;">Wygrana</span>
+              {% else %}
+                <span style="color:#c0392b;font-weight:700;">Przegrana</span>
+              {% endif %}
+            </td>
+
+            <td class="text-center">{{ entry.rating_before }}</td>
+
+            {# Delta — zielona jeśli +, czerwona jeśli - #}
+            <td class="text-center" style="font-weight:700;font-family:var(--font-display);">
+              {% if entry.delta > 0 %}
+                <span style="color:#1e7e34;">+{{ entry.delta }}</span>
+              {% elif entry.delta < 0 %}
+                <span style="color:#c0392b;">{{ entry.delta }}</span>
+              {% else %}
+                <span style="color:#aaa;">0</span>
+              {% endif %}
+            </td>
+
+            <td class="text-center pts">{{ entry.rating_after }}</td>
+
+            {# Komentarz — tylko jeśli jest #}
+            <td style="font-size:.82rem;color:#aaa;max-width:200px;">
+              {{ entry.match.notes|default:"—" }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center" style="color:#aaa;padding:2rem;">
+              Ten gracz nie rozegrał jeszcze żadnego meczu ELO.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

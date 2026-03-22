@@ -1,0 +1,76 @@
+db.sqlite3
+.idea/.gitignore
+.idea/Laczkers.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/inspectionProfiles/profiles_settings.xml
+Laczkers/.env
+Laczkers/__pycache__/__init__.cpython-310.pyc
+Laczkers/__pycache__/settings.cpython-310.pyc
+Laczkers/__pycache__/urls.cpython-310.pyc
+Laczkers/__pycache__/wsgi.cpython-310.pyc
+laczkerscup/__pycache__/__init__.cpython-310.pyc
+laczkerscup/__pycache__/admin.cpython-310.pyc
+laczkerscup/__pycache__/apps.cpython-310.pyc
+laczkerscup/__pycache__/elo.cpython-310.pyc
+laczkerscup/__pycache__/losowanie_logika.cpython-310.pyc
+laczkerscup/__pycache__/models.cpython-310.pyc
+laczkerscup/__pycache__/signals.cpython-310.pyc
+laczkerscup/__pycache__/szwajcar_logika.cpython-310.pyc
+laczkerscup/__pycache__/urls.cpython-310.pyc
+laczkerscup/__pycache__/views.cpython-310.pyc
+laczkerscup/__pycache__/views_losowanie.cpython-310.pyc
+laczkerscup/__pycache__/views_szwajcar.cpython-310.pyc
+laczkerscup/migrations/__pycache__/__init__.cpython-310.pyc
+laczkerscup/migrations/__pycache__/0001_initial.cpython-310.pyc
+laczkerscup/migrations/__pycache__/0002_losowanieelo_meczlosowania_uczestniklosowania.cpython-310.pyc
+laczkerscup/migrations/__pycache__/0003_etap_turniej_mecz_etap_turniej_wystepgracza_and_more.cpython-310.pyc
+laczkerscup/migrations/__pycache__/0004_etap_obrazek.cpython-310.pyc
+laczkerscup/migrations/__pycache__/0005_szwajcarkolejka_szwajcarpara.cpython-310.pyc
+laczkerscup/migrations/__pycache__/0006_uczestnikturnieju_ulubiony_klub.cpython-310.pyc
+media/drabinki/drabinka.jpg
+media/drabinki/drabinka_najman.jpg
+media/drabinki/drabinka_vrzpFNU.jpg
+
+
+# ── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Django ───────────────────────────────────────────────
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# ── Środowisko wirtualne ─────────────────────────────────
+venv/
+env/
+.env/
+.venv/
+
+# ── Zmienne środowiskowe / sekrety ───────────────────────
+.env
+.env.local
+.env.production
+secrets.py
+
+# ── PyCharm ──────────────────────────────────────────────
+.idea/
+
+# ── System operacyjny ────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Migracje (opcjonalnie — usuń te linie jeśli chcesz trzymać migracje w repo) ──
+# laczkerscup/migrations/
+

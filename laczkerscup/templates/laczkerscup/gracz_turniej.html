@@ -1,0 +1,96 @@
+{% extends "laczkerscup/base.html" %}
+{% block title %}{{ gracz.display_name }} — {{ turniej.nazwa }}{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:960px;">
+
+  <div class="mb-4">
+    <p class="text-muted mb-1" style="font-size:.85rem;">
+      <a href="{% url 'laczkerscup:turniej_detail' turniej.pk %}"
+         style="color:var(--yellow); text-decoration:none;">
+        <i class="bi bi-arrow-left me-1"></i>{{ turniej.nazwa }}
+      </a>
+    </p>
+    <h2 class="fw-bold mb-0" style="color:var(--yellow); font-family:var(--font-display);">
+      {{ gracz.display_name }}
+    </h2>
+    {% for u in turniej.uczestnicy.all %}{% if u.gracz_id == gracz.pk %}
+    <p class="text-muted mb-0">{{ u.zespol }}</p>
+    {% endif %}{% endfor %}
+  </div>
+
+  <div class="section-title">
+    <i class="bi bi-list-ul icon"></i>Mecze w turnieju
+  </div>
+
+  <div class="card-dark">
+    <div class="table-responsive">
+      <table class="table mb-0" style="color:#eee;">
+        <thead>
+          <tr style="background:var(--black-3); color:#ccc; font-size:.85rem;">
+            <th class="ps-3">Etap</th>
+            <th>Przeciwnik</th>
+            <th class="text-center" style="width:95px;">Status</th>
+            <th class="text-center" style="width:75px;">Wynik</th>
+            <th class="text-center" style="width:45px;">Pkt</th>
+            <th class="text-center" style="width:38px;">🟨</th>
+            <th class="text-center" style="width:38px;">🟥</th>
+            <th>Opis</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mecz in mecze %}
+          {% if mecz.gracz_a == gracz %}
+            {% with rywal=mecz.gracz_b gole_za=mecz.gole_a gole_str=mecz.gole_b zolte=mecz.zolte_a czerwone=mecz.czerwone_a pkt=mecz.punkty_a %}
+            <tr>
+              <td class="ps-3 text-muted small">{{ mecz.etap.nazwa }}</td>
+              <td>{% if rywal %}{{ rywal.display_name }}{% else %}<span style="color:#FF8F00;">BYE</span>{% endif %}</td>
+              <td class="text-center">
+                {% if mecz.status == 'rozegrany' %}<span style="color:#2ecc71; font-size:.75rem;">Rozegrany</span>
+                {% elif mecz.status == 'wolny_los' %}<span style="color:#FF8F00; font-size:.75rem;">Wolny los</span>
+                {% else %}<span style="color:#888; font-size:.75rem;">Zaplanowany</span>{% endif %}
+              </td>
+              <td class="text-center">
+                {% if mecz.status == 'rozegrany' %}<span class="fw-bold">{{ gole_za }} : {{ gole_str }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-center">
+                <span class="fw-bold" style="color:{% if pkt == 3 %}#2ecc71{% elif pkt == 1 %}var(--yellow){% else %}#e74c3c{% endif %};">{{ pkt }}</span>
+              </td>
+              <td class="text-center text-muted">{% if zolte %}{{ zolte }}{% else %}—{% endif %}</td>
+              <td class="text-center text-muted">{% if czerwone %}{{ czerwone }}{% else %}—{% endif %}</td>
+              <td class="text-muted small" style="white-space:normal;">{{ mecz.opis }}</td>
+            </tr>
+            {% endwith %}
+          {% else %}
+            {% with rywal=mecz.gracz_a gole_za=mecz.gole_b gole_str=mecz.gole_a zolte=mecz.zolte_b czerwone=mecz.czerwone_b pkt=mecz.punkty_b %}
+            <tr>
+              <td class="ps-3 text-muted small">{{ mecz.etap.nazwa }}</td>
+              <td>{{ rywal.display_name }}</td>
+              <td class="text-center">
+                {% if mecz.status == 'rozegrany' %}<span style="color:#2ecc71; font-size:.75rem;">Rozegrany</span>
+                {% else %}<span style="color:#888; font-size:.75rem;">Zaplanowany</span>{% endif %}
+              </td>
+              <td class="text-center">
+                {% if mecz.status == 'rozegrany' %}<span class="fw-bold">{{ gole_za }} : {{ gole_str }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-center">
+                <span class="fw-bold" style="color:{% if pkt == 3 %}#2ecc71{% elif pkt == 1 %}var(--yellow){% else %}#e74c3c{% endif %};">{{ pkt }}</span>
+              </td>
+              <td class="text-center text-muted">{% if zolte %}{{ zolte }}{% else %}—{% endif %}</td>
+              <td class="text-center text-muted">{% if czerwone %}{{ czerwone }}{% else %}—{% endif %}</td>
+              <td class="text-muted small" style="white-space:normal;">{{ mecz.opis }}</td>
+            </tr>
+            {% endwith %}
+          {% endif %}
+          {% empty %}
+          <tr><td colspan="8" class="text-center py-4" style="color:#666;">Brak meczów.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

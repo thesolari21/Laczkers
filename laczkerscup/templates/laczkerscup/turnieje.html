@@ -1,0 +1,90 @@
+{% extends "laczkerscup/base.html" %}
+{% block title %}Turnieje{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:860px;">
+
+  <h2 class="fw-bold mb-4" style="color:var(--yellow); font-family:var(--font-display);">
+    <i class="bi bi-trophy-fill me-2"></i>Turnieje
+  </h2>
+
+  {# AKTYWNE #}
+  <div class="section-title">
+    <i class="bi bi-play-circle-fill icon" style="color:#2ecc71;"></i>Aktywne
+  </div>
+
+  {% if aktywne %}
+  <div class="card-dark mb-4">
+    <table class="table mb-0" style="color:#eee;">
+      <thead>
+        <tr style="background:var(--black-4); color:#aaa; font-size:.85rem;">
+          <th class="ps-3">Nazwa</th>
+          <th>Data start</th>
+          <th>Data koniec</th>
+          <th class="text-center">Graczy</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in aktywne %}
+        <tr style="border-color:var(--black-5);">
+          <td class="ps-3 fw-semibold" style="color:var(--yellow);">{{ t.nazwa }}</td>
+          <td class="text-muted small">{{ t.data_start|date:"d.m.Y"|default:"—" }}</td>
+          <td class="text-muted small">{{ t.data_koniec|date:"d.m.Y"|default:"—" }}</td>
+          <td class="text-center text-muted">{{ t.uczestnicy.count }}</td>
+          <td class="text-end pe-3">
+            <a href="{% url 'laczkerscup:turniej_detail' t.pk %}"
+               class="btn btn-sm btn-outline-warning">
+              <i class="bi bi-eye me-1"></i>Szczegóły
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-dark p-4 text-center text-muted mb-4">Brak aktywnych turniejów.</div>
+  {% endif %}
+
+  {# ARCHIWALNE #}
+  <div class="section-title">
+    <i class="bi bi-archive-fill icon" style="color:#888;"></i>Archiwalne
+  </div>
+
+  {% if archiwalne %}
+  <div class="card-dark">
+    <table class="table mb-0" style="color:#eee;">
+      <thead>
+        <tr style="background:var(--black-4); color:#aaa; font-size:.85rem;">
+          <th class="ps-3">Nazwa</th>
+          <th>Data start</th>
+          <th>Data koniec</th>
+          <th class="text-center">Graczy</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in archiwalne %}
+        <tr style="border-color:var(--black-5); opacity:.75;">
+          <td class="ps-3 fw-semibold">{{ t.nazwa }}</td>
+          <td class="text-muted small">{{ t.data_start|date:"d.m.Y"|default:"—" }}</td>
+          <td class="text-muted small">{{ t.data_koniec|date:"d.m.Y"|default:"—" }}</td>
+          <td class="text-center text-muted">{{ t.uczestnicy.count }}</td>
+          <td class="text-end pe-3">
+            <a href="{% url 'laczkerscup:turniej_detail' t.pk %}"
+               class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-eye me-1"></i>Szczegóły
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-dark p-4 text-center text-muted">Brak archiwalnych turniejów.</div>
+  {% endif %}
+
+</div>
+{% endblock %}

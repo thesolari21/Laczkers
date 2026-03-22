@@ -1,0 +1,188 @@
+{% extends "laczkerscup/base.html" %}
+
+{% block title %}Ranking ELO — FIFALeague{% endblock %}
+
+{% block hero %}
+<section class="hero">
+  <div class="container">
+    <p class="hero-eyebrow">Statystyki globalne</p>
+    <h1>Ranking <span>ELO</span></h1>
+    <p class="hero-sub">Klasyfikacja wszechczasów na podstawie systemu punktacji ELO</p>
+    <span class="badge-season">Aktualizowany po każdym turnieju</span>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="section-wrap">
+  <div class="row g-4">
+
+    {# ── TABELA RANKINGU (lewa kolumna) ───────────────── #}
+    <div class="col-lg-8">
+      <div class="section-title">
+        <i class="bi bi-bar-chart-fill icon"></i>Ranking ELO
+      </div>
+
+      <div class="card-dark">
+        <div class="table-responsive">
+          <table class="table standings-table mb-0">
+            <thead>
+              <tr>
+                <th class="text-center">#</th>
+                <th>Gracz</th>
+                <th class="text-center">Rating ELO</th>
+                <th class="text-center">Mecze</th>
+                <th class="text-center">% Wygranych</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in ranking %}
+              <tr class="{% if forloop.counter <= 3 %}pos-{{ forloop.counter }}{% endif %}">
+
+                <td class="pos-num text-center">{{ forloop.counter }}</td>
+
+                <td class="team-name">
+                  {% if entry.is_debut %}
+                    {{ entry.player }}
+                    <span style="color:yellowgreen;font-size:.75rem;font-weight:400;"> (debiutant)</span>
+                  {% else %}
+                    <a href="{% url 'laczkerscup:elo_history' entry.player.id %}"
+                       style="color:inherit;text-decoration:none;">
+                      {{ entry.player }}
+                    </a>
+                  {% endif %}
+                </td>
+
+                <td class="text-center pts">{{ entry.rating }}</td>
+                <td class="text-center">{{ entry.matches }}</td>
+
+                <td class="text-center">
+                  {% if entry.is_debut %}
+                    <span style="color:#aaa;">—</span>
+                  {% else %}
+                    {{ entry.win_pct }}%
+                  {% endif %}
+                </td>
+
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center" style="color:#aaa;padding:2rem;">
+                  Brak graczy w rankingu.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="mt-3" style="color:var(--text-muted);font-size:.82rem;">
+        Kliknij na nazwę gracza aby zobaczyć jego historię meczów ELO.
+      </div>
+    </div>
+
+    {# ── PANEL BOCZNY (prawa kolumna) ─────────────────── #}
+    <div class="col-lg-4">
+
+      {# PANEL 1 — Jak działa ELO #}
+      <div class="section-title" style="font-size:1.2rem;">
+        <i class="bi bi-info-circle icon"></i>Jak działa ELO?
+      </div>
+      <div class="card-dark p-3 mb-4" style="font-size:.88rem;line-height:1.7;color:var(--text-light);">
+        <p class="mb-2">
+            <a href="https://www.geeksforgeeks.org/dsa/elo-rating-algorithm/">System ELO</a> to metoda rankingowa oparta na oczekiwanym wyniku meczu.
+        </p>
+        <p class="mb-2">
+          <strong style="color:var(--yellow);"> Wygrana ze słabym</strong> — zdobywasz mało punktów.<br>
+            <strong style="color:var(--yellow);">Wygrana z mocnym</strong> — zdobywasz dużo punktów.<br>
+          <strong style="color:#c0392b;">Przegrana z mocnym</strong> — tracisz mało punktów.<br>
+             <strong style="color:#c0392b;">Przegrana z słabym</strong> — tracisz dużo punktów.<br>
+          <strong style="color:#888;">Remis</strong> — mała korekta zależna od różnicy ratingów.
+        </p>
+        <p class="mb-2">
+          Punkt startowy każdego gracza:
+          <strong style="color:var(--yellow);">1000</strong> pkt.
+        </p>
+
+      </div>
+
+      <div class="section-title" style="font-size:1.2rem;">
+        <i class="bi bi-bookmark-fill icon"></i>Jak obliczamy ELO?
+      </div>
+      <div class="card-dark p-3">
+
+        <p style="color:var(--text-muted);font-size:.85rem;margin:0;">
+            <strong style="color:var(--yellow);"> Oczekiwany wynik przed meczem: </strong><br>
+
+  <div style="font-size:1.6rem; color:#eee;">
+    \( \displaystyle
+      \color{#d4a800}{E} = \frac{1}{1 + 10^{\Large\frac{\color{#5dade2}{R_{\text{przeciwnik}}} \,-\, \color{#2ecc71}{R_{\text{gracz}}}}{400}}}
+    \)
+  </div>
+
+
+           <p class="mb-2" style="color:var(--text-muted);font-size:.85rem;margin-top:.8rem;">
+            gdzie:
+             <br>→ E - oczekiwany wynik przed meczem <0;1>,
+             <br>→ R - rating gracza<br>
+          </p>
+
+            <strong style="color:var(--yellow);"> Zmiana ratingu po meczu: </strong><br>
+           <div style="font-size:1.6rem; color:#eee;">
+     \( \displaystyle
+      \color{#d4a800}{\Delta} = \color{#5dade2}{K} \times \left( \color{#2ecc71}{\text{wynik}} - \color{#e74c3c}{E} \right)
+    \)
+  </div>
+        </p>
+
+         <p class="mb-2" style="color:var(--text-muted);font-size:.85rem;margin-top:.8rem;">
+            gdzie:
+             <br>→ wynik to: 1 (wygrana), 0.5 (remis), 0 (przegrana),
+
+             <br>→ współczynnik K:<br>
+          </p>
+        <table class="table table-sm mb-0 mt-2" style="font-size:.8rem;color:var(--text-light);">
+          <thead>
+            <tr style="border-color:var(--black-5);">
+              <th style="background:var(--black-4);color:var(--yellow);border:none;padding:.4rem .6rem;">Mecze</th>
+              <th style="background:var(--black-4);color:var(--yellow);border:none;padding:.4rem .6rem;">K</th>
+              <th style="background:var(--black-4);color:var(--yellow);border:none;padding:.4rem .6rem;">Efekt</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-color:var(--black-5);background:var(--black-3);">
+              <td style="border:none;padding:.35rem .6rem;">0 – 4</td>
+              <td style="border:none;padding:.35rem .6rem;">40</td>
+              <td style="border:none;padding:.35rem .6rem;color:#aaa;">duże korekty</td>
+            </tr>
+            <tr style="border-color:var(--black-5);background:var(--black-3);">
+              <td style="border:none;padding:.35rem .6rem;">5 – 9</td>
+              <td style="border:none;padding:.35rem .6rem;">32</td>
+              <td style="border:none;padding:.35rem .6rem;color:#aaa;">średnie korekty</td>
+            </tr>
+            <tr style="border-color:var(--black-5);background:var(--black-3);">
+              <td style="border:none;padding:.35rem .6rem;">10+</td>
+              <td style="border:none;padding:.35rem .6rem;">24</td>
+              <td style="border:none;padding:.35rem .6rem;color:#aaa;">stabilny rating</td>
+            </tr>
+          </tbody>
+        </table>
+
+          <br><p style="color:var(--text-muted);font-size:.85rem;margin:0;">
+            <strong style="color:var(--yellow);"> Do rankingu zaliczamy: </strong><br>
+            </p>
+           <p class="mb-2" style="color:var(--text-muted);font-size:.85rem;margin-top:.8rem;">
+             → Laczkondial 2018,
+             <br>→ Laczkondial 2022<br>
+               → Laczkeuro 2024<br>
+               → Liga Mistrzów 2025<br>
+          </p>
+
+      </div>
+
+    </div>{# /.col-lg-4 #}
+
+  </div>{# /.row #}
+</div>
+{% endblock %}

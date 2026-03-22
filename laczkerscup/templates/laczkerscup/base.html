@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}LaczkersCup{% endblock %}</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /*
+    ╔══════════════════════════════════════════╗
+    ║  KONFIGURACJA — zmień nazwę ligi tutaj   ║
+    ╚══════════════════════════════════════════╝
+    Zmienne nazwy do edycji w HTML:
+      brand-primary  → pierwsza część (żółta),  np. "FIFA"
+      brand-secondary → druga część (biała),     np. "League"
+    Szukaj tagów: <span class="brand-primary"> i <span class="brand-secondary">
+    */
+    :root {
+      --yellow:     #d4a800;
+      --yellow-dim: #b89000;
+      --yellow-glow: rgba(212, 168, 0, 0.18);
+      --black:  #0a0a0a;
+      --black-2: #111111;
+      --black-3: #1a1a1a;
+      --black-4: #222222;
+      --black-5: #2e2e2e;
+      --text-muted: #999;
+      --text-light: #ccc;
+      --font-display: 'Barlow Condensed', sans-serif;
+      --font-body:    'Barlow', sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--black);
+      color: #eee;
+      font-family: var(--font-body);
+      margin: 0;
+    }
+
+    /* ─── NAVBAR ──────────────────────────────────────── */
+    .navbar {
+      background: var(--black-2);
+      border-bottom: 2px solid var(--yellow);
+      padding: 0;
+    }
+    .navbar-brand {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.7rem;
+      letter-spacing: 2px;
+      color: var(--yellow) !important;
+      text-transform: uppercase;
+      padding: .75rem 1rem;
+    }
+    .navbar-brand .brand-primary  { color: var(--yellow); }
+    .navbar-brand .brand-secondary { color: #fff; }
+    .navbar-toggler {
+      border-color: var(--yellow);
+      color: var(--yellow);
+    }
+    .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23FFD700' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+    .navbar-nav .nav-link {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-light) !important;
+      padding: 1.1rem 1rem !important;
+      border-bottom: 3px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+      color: var(--yellow) !important;
+      border-bottom-color: var(--yellow);
+    }
+    .navbar-nav .dropdown-menu {
+      background: var(--black-3);
+      border: 1px solid var(--black-5);
+      border-top: 2px solid var(--yellow);
+      border-radius: 0;
+      min-width: 200px;
+    }
+    .navbar-nav .dropdown-item {
+      color: var(--text-light);
+      font-family: var(--font-display);
+      font-size: .95rem;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: .6rem 1.2rem;
+      transition: background .2s, color .2s;
+    }
+    .navbar-nav .dropdown-item:hover {
+      background: var(--yellow-glow);
+      color: var(--yellow);
+    }
+    .navbar-nav .dropdown-divider { border-color: var(--black-5); }
+
+    /* ─── HERO / BELKA TYTUŁOWA ───────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, var(--black-2) 0%, var(--black-3) 60%, #1c1800 100%);
+      border-bottom: 1px solid var(--black-5);
+      padding: 3rem 0 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 420px; height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--yellow-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: .85rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: .4rem;
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      line-height: 1;
+      margin-bottom: .6rem;
+    }
+    .hero h1 span { color: var(--yellow); }
+    .hero-sub {
+      color: var(--text-muted);
+      font-size: .95rem;
+      margin-bottom: 1.4rem;
+    }
+    .badge-season {
+      background: var(--yellow);
+      color: var(--black);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: .8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: .3rem .8rem;
+      border-radius: 2px;
+    }
+    .hero-stats {
+      display: flex;
+      gap: 2rem;
+      margin-top: 1.8rem;
+      flex-wrap: wrap;
+    }
+    .hero-stat-item { text-align: center; }
+    .hero-stat-item .num {
+      display: block;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 2rem;
+      color: var(--yellow);
+      line-height: 1;
+    }
+    .hero-stat-item .lbl {
+      display: block;
+      font-size: .75rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: .2rem;
+    }
+
+    /* ─── SECTION TITLES ──────────────────────────────── */
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.6rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 1.6rem;
+      background: var(--yellow);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .section-title .icon { color: var(--yellow); font-size: 1.3rem; }
+
+    /* ─── CARDS ───────────────────────────────────────── */
+    .card-dark {
+      background: var(--black-3);
+      border: 1px solid var(--black-5);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .card-dark-header {
+      background: var(--black-4);
+      border-bottom: 1px solid var(--black-5);
+      padding: .7rem 1rem;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: .9rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--yellow);
+    }
+
+    /* ─── TABLE WYNIKÓW ───────────────────────────────── */
+    .standings-table { background: #fff; }
+    .standings-table thead th {
+      background: #1a1a1a;
+      color: var(--yellow);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: .8rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border: none;
+      padding: .7rem .8rem;
+      white-space: nowrap;
+    }
+    .standings-table tbody tr {
+      border-bottom: 1px solid #e8e8e8;
+      background: #fff;
+      transition: background .15s;
+    }
+    .standings-table tbody tr:hover { background: #fffbea; }
+    .standings-table tbody td {
+      padding: .65rem .8rem;
+      color: #222;
+      vertical-align: middle;
+      border: none;
+      font-size: .9rem;
+    }
+    .standings-table .pos-num {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #aaa;
+      width: 32px;
+      text-align: center;
+    }
+    .standings-table .pos-1 .pos-num { color: #b8860b; }
+    .standings-table .pos-2 .pos-num { color: #888; }
+    .standings-table .pos-3 .pos-num { color: #cd7f32; }
+    .standings-table .team-name { font-weight: 700; color: #111; }
+    .standings-table .pts {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #b8860b;
+    }
+    .form-badge {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border-radius: 3px;
+      font-size: .7rem;
+      font-weight: 700;
+      line-height: 20px;
+      text-align: center;
+      margin-right: 2px;
+    }
+    .form-w { background: #1e7e34; color: #fff; }
+    .form-d { background: #888;    color: #fff; }
+    .form-l { background: #c0392b; color: #fff; }
+
+    /* ─── HARMONOGRAM ─────────────────────────────────── */
+    .match-card {
+      background: var(--black-3);
+      border: 1px solid var(--black-5);
+      border-radius: 6px;
+      padding: .9rem 1rem;
+      margin-bottom: .6rem;
+      transition: border-color .2s, background .2s;
+    }
+    .match-card:hover { border-color: var(--yellow-dim); background: #1c1c1c; }
+    .match-round {
+      font-family: var(--font-display);
+      font-size: .75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: .4rem;
+    }
+    .match-teams {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+    }
+    .match-team {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+      flex: 1;
+    }
+    .match-team.away { text-align: right; }
+    .match-score {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.3rem;
+      color: var(--yellow);
+      min-width: 70px;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    .match-score.upcoming {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+    .match-date {
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-top: .35rem;
+    }
+
+    /* ─── STATYSTYKI KARTY ────────────────────────────── */
+    .stat-card {
+      background: var(--black-3);
+      border: 1px solid var(--black-5);
+      border-radius: 6px;
+      padding: 1.2rem;
+      text-align: center;
+      transition: border-color .2s;
+    }
+    .stat-card:hover { border-color: var(--yellow-dim); }
+    .stat-card .stat-icon { font-size: 2rem; color: var(--yellow); margin-bottom: .5rem; }
+    .stat-card .stat-val {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 2.4rem;
+      color: #fff;
+      line-height: 1;
+    }
+    .stat-card .stat-lbl {
+      font-size: .75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: .3rem;
+    }
+
+    /* ─── KLASYFIKACJE / RANKINGI ─────────────────────── */
+    .ranking-table { background: #fff; }
+    .ranking-table thead th {
+      background: #1a1a1a;
+      color: var(--yellow);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: .78rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border: none;
+      padding: .6rem .8rem;
+    }
+    .ranking-table tbody tr {
+      border-bottom: 1px solid #e8e8e8;
+      background: #fff;
+      transition: background .15s;
+    }
+    .ranking-table tbody tr:hover { background: #fffbea; }
+    .ranking-table tbody td {
+      padding: .55rem .8rem;
+      color: #222;
+      border: none;
+      font-size: .88rem;
+      vertical-align: middle;
+    }
+    .ranking-table .rank {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1rem;
+      color: #aaa;
+      width: 30px;
+    }
+    .ranking-table .rank-1 { color: #b8860b; }
+    .ranking-table .rank-2 { color: #888; }
+    .ranking-table .rank-3 { color: #cd7f32; }
+    .ranking-highlight {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #b8860b;
+    }
+
+    /* ─── TABS ────────────────────────────────────────── */
+    .nav-tabs-dark {
+      border-bottom: 1px solid var(--black-5);
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    .nav-tabs-dark .nav-link {
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: .85rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: .6rem 1rem;
+      white-space: nowrap;
+      transition: color .2s, border-color .2s;
+    }
+    .nav-tabs-dark .nav-link:hover { color: #fff; }
+    .nav-tabs-dark .nav-link.active {
+      color: var(--yellow);
+      border-bottom-color: var(--yellow);
+      background: transparent;
+    }
+
+    /* ─── PILL BADGES ─────────────────────────────────── */
+    .pill {
+      display: inline-block;
+      background: var(--yellow);
+      color: var(--black);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: .7rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: .2rem .55rem;
+      border-radius: 3px;
+    }
+    .pill-outline {
+      background: transparent;
+      border: 1px solid var(--yellow);
+      color: var(--yellow);
+    }
+    .pill-muted {
+      background: var(--black-4);
+      color: var(--text-muted);
+      border: 1px solid var(--black-5);
+    }
+
+    /* ─── DRABINKA TURNIEJOWA ─────────────────────────── */
+    .bracket-wrap { overflow-x: auto; padding-bottom: .5rem; }
+    .bracket {
+      display: flex;
+      gap: 0;
+      min-width: 700px;
+      align-items: stretch;
+    }
+    .bracket-round { display: flex; flex-direction: column; flex: 1; }
+    .bracket-round-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: .75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--yellow);
+      text-align: center;
+      padding: .5rem 0 .8rem;
+      border-bottom: 1px solid var(--black-5);
+      margin-bottom: auto;
+    }
+    .bracket-matches {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      flex: 1;
+      padding: .5rem .3rem;
+      position: relative;
+    }
+    .bracket-round:not(:last-child) .bracket-matches::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 25%; bottom: 25%;
+      width: 1px;
+      background: var(--black-5);
+    }
+    .bracket-match {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: .4rem .3rem;
+    }
+    .bracket-participant {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .4rem .65rem;
+      gap: .5rem;
+      font-family: var(--font-display);
+      font-size: .95rem;
+      font-weight: 600;
+      color: #222;
+      border-bottom: 1px solid #eee;
+      transition: background .15s;
+    }
+    .bracket-participant:last-child { border-bottom: none; }
+    .bracket-participant.winner { background: #fffbea; font-weight: 800; }
+    .bracket-participant .bp-score {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1rem;
+      color: #b8860b;
+      min-width: 20px;
+      text-align: right;
+    }
+    .bracket-participant .bp-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #333;
+    }
+    .bracket-tbd .bp-name  { color: #bbb; font-weight: 400; font-style: italic; }
+    .bracket-tbd .bp-score { color: #ddd; }
+    .bracket-match-label {
+      font-family: var(--font-display);
+      font-size: .65rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #aaa;
+      padding: .25rem .65rem;
+      background: #f5f5f5;
+      border-bottom: 1px solid #eee;
+    }
+    .bracket-winner-card {
+      background: var(--black-3);
+      border: 2px solid var(--yellow);
+      border-radius: 6px;
+      text-align: center;
+      padding: 1.2rem .8rem;
+      margin: .4rem .3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .3rem;
+    }
+    .bracket-winner-card .trophy { font-size: 2rem; }
+    .bracket-winner-card .wlbl {
+      font-family: var(--font-display);
+      font-size: .7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--yellow);
+    }
+    .bracket-winner-card .wname {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .bracket-pending {
+      background: var(--black-3);
+      border: 1px dashed var(--black-5);
+      border-radius: 6px;
+      text-align: center;
+      padding: 2rem 1rem;
+      margin: .4rem .3rem;
+      color: var(--text-muted);
+    }
+    .bracket-pending .pend-icon { font-size: 1.8rem; color: var(--black-5); margin-bottom: .4rem; }
+    .bracket-pending .pend-text {
+      font-family: var(--font-display);
+      font-size: .8rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* ─── FOOTER ──────────────────────────────────────── */
+    footer {
+      background: var(--black-2);
+      border-top: 1px solid var(--black-5);
+      padding: 2rem 0;
+      margin-top: 3rem;
+    }
+    footer .brand {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+    }
+    footer .brand .brand-primary  { color: var(--yellow); }
+    footer .brand .brand-secondary { color: #fff; }
+    footer p  { color: var(--text-muted); font-size: .82rem; margin: 0; }
+    footer a  { color: var(--text-muted); text-decoration: none; font-size: .82rem; }
+    footer a:hover { color: var(--yellow); }
+
+    /* ─── DIVIDER ─────────────────────────────────────── */
+    .divider { border: none; border-top: 1px solid var(--black-5); margin: 2.5rem 0; }
+
+    /* ─── MISC ────────────────────────────────────────── */
+    .section-wrap { padding: 2.5rem 0 0; }
+    @media (max-width: 576px) {
+      .hero { padding: 2rem 0 1.8rem; }
+      .hero-stats { gap: 1.2rem; }
+    }
+
+    {% block extra_css %}{% endblock %}
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════ -->
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container">
+
+    {# ── LOGO / NAZWA LIGI — edytuj tekst w spanach poniżej ── #}
+    <a class="navbar-brand" href="{% url 'laczkerscup:index' %}">
+      ⚽ <span class="brand-primary">LACZKERS</span><span class="brand-secondary">CUP</span>
+    </a>
+
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse" data-bs-target="#mainNav"
+            aria-controls="mainNav" aria-expanded="false" aria-label="Menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}"
+             href="{% url 'laczkerscup:index' %}">
+            <i class="bi bi-house-fill me-1"></i>Strona główna
+          </a>
+        </li>
+
+        {# ── DROPDOWN: Turnieje ── #}
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name in 'turnieje,turniej_detail' %}active{% endif %}"
+             href="{% url 'laczkerscup:turnieje' %}">
+            <i class="bi bi-trophy me-1"></i>Turnieje
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'elo' %}active{% endif %}"
+             href="{% url 'laczkerscup:elo' %}">
+            <i class="bi bi-bar-chart-fill me-1"></i>Ranking ELO
+          </a>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if 'losowanie' in request.resolver_match.url_name %}active{% endif %}"
+             href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-calendar3 me-1"></i>Generator harmonogramu
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <h6 class="dropdown-header" style="color: var(--yellow); font-size:.7rem; letter-spacing:1px;">
+
+              </h6>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'laczkerscup:losowanie_formularz' %}">
+                <i class="bi bi-shuffle me-2"></i>Losowanie ELO
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'laczkerscup:szwajcar' %}">
+                <i class="bi bi-diagram-2-fill me-2"></i>System Szwajcarski
+              </a>
+            </li>
+          </ul>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     BLOK HERO — opcjonalny, każda podstrona
+     może go nadpisać lub pozostawić pusty
+══════════════════════════════════════════ -->
+{% block hero %}{% endblock %}
+
+<!-- ══════════════════════════════════════════
+     GŁÓWNA TREŚĆ
+══════════════════════════════════════════ -->
+<div class="container">
+  {% block content %}{% endblock %}
+</div>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        {# ── NAZWA LIGI w stopce — edytuj tekst w spanach ── #}
+        <div class="brand mb-1">
+          ⚽ <span class="brand-primary">Laczkers</span><span class="brand-secondary">Cup</span>
+        </div>
+        <p>Najbardziej kozackie turnieje FIFA. Wszystkie prawa zastrzeżone &copy; 2026</p>
+      </div>
+      <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'laczkerscup:elo' %}" class="me-3">Ranking ELO</a>
+        <a href="#" class="me-3">Generator harmonogramu</a>
+        <a href="#">Turnieje</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
