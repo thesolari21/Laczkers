@@ -12,6 +12,7 @@ urlpatterns = [
     # Turnieje
     path('turnieje/',                       views.turnieje,        name='turnieje'),
     path('turnieje/<int:pk>/',              views.turniej_detail,  name='turniej_detail'),
+    path('turnieje/<int:pk>/notka/',        views.turniej_notka,   name='turniej_notka'),
     path('turnieje/<int:turniej_pk>/gracz/<int:gracz_pk>/', views.gracz_w_turnieju, name='gracz_turniej'),
 
     # System szwajcarski

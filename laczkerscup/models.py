@@ -1,4 +1,6 @@
 from django.db import models
+from ckeditor.fields import RichTextField
+from ckeditor.fields import RichTextField
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -23,7 +25,7 @@ class Player(models.Model):
         return f'{self.first_name} {self.last_name}'
 
     def display_name(self):
-        return self.nickname or f'{self.first_name} {self.last_name[0]}.'
+        return self.nickname or f'{self.last_name} {self.first_name[0]}.'
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -132,6 +134,17 @@ class Turniej(models.Model):
     data_start = models.DateField('Data rozpoczęcia', blank=True, null=True)
     data_koniec = models.DateField('Data zakończenia', blank=True, null=True)
     opis       = models.TextField('Opis', blank=True)
+    notka      = RichTextField(
+        'Notka o turnieju',
+        blank=True, default='',
+        help_text='Artykuł opisujący turniej — wyświetlany na osobnej podstronie.'
+    )
+    zdjecie    = models.ImageField(
+        'Zdjęcie',
+        upload_to='turnieje/',
+        blank=True, null=True,
+        help_text='Opcjonalne zdjęcie wyświetlane w notce turnieju.'
+    )
 
     class Meta:
         verbose_name        = 'Turniej'
@@ -387,3 +400,135 @@ class SzwajcarPara(models.Model):
     def __str__(self):
         b = self.gracz_b.display_name() if self.gracz_b else 'BYE'
         return f'{self.kolejka} | {self.gracz_a.display_name()} vs {b}'
+
+
+# ─────────────────────────────────────────────────────────────────────
+#  TYPER TURNIEJOWY
+# ─────────────────────────────────────────────────────────────────────
+
+class WynikTurnieju(models.Model):
+    """
+    Poprawne odpowiedzi dla typera — wpisywane ręcznie po zakończeniu turnieju.
+    Jeden rekord na turniej.
+    """
+    turniej         = models.OneToOneField(Turniej, on_delete=models.CASCADE,
+                                           related_name='wynik', verbose_name='Turniej')
+    miejsce_1       = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='1. miejsce',
+                                        null=True, blank=True)
+    miejsce_2       = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='2. miejsce',
+                                        null=True, blank=True)
+    miejsce_3       = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='3. miejsce',
+                                        null=True, blank=True)
+    miejsce_ostatnie = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                         related_name='+', verbose_name='Ostatnie miejsce',
+                                         null=True, blank=True)
+    krol_strzelcow  = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Król strzelców',
+                                        null=True, blank=True)
+    murarz          = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Murarz',
+                                        null=True, blank=True)
+    kosiarz         = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Kosiarz',
+                                        null=True, blank=True)
+    zwycięski_klub  = models.CharField('Zwycięski klub', max_length=100,
+                                       blank=True, default='')
+
+    class Meta:
+        verbose_name        = 'Wynik turnieju (typer)'
+        verbose_name_plural = 'Wyniki turniejów (typer)'
+
+    def __str__(self):
+        return f'Wyniki — {self.turniej.nazwa}'
+
+
+class TypTurnieju(models.Model):
+    """
+    Odpowiedzi jednego gracza w typerze — wpisywane ręcznie przez admina.
+    """
+    turniej         = models.ForeignKey(Turniej, on_delete=models.CASCADE,
+                                        related_name='typy', verbose_name='Turniej')
+    gracz           = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='typy', verbose_name='Gracz typujący')
+    miejsce_1       = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Typ: 1. miejsce',
+                                        null=True, blank=True)
+    miejsce_2       = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Typ: 2. miejsce',
+                                        null=True, blank=True)
+    miejsce_3       = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Typ: 3. miejsce',
+                                        null=True, blank=True)
+    miejsce_ostatnie = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                         related_name='+', verbose_name='Typ: Ostatnie miejsce',
+                                         null=True, blank=True)
+    krol_strzelcow  = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Typ: Król strzelców',
+                                        null=True, blank=True)
+    murarz          = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Typ: Murarz',
+                                        null=True, blank=True)
+    kosiarz         = models.ForeignKey(Player, on_delete=models.PROTECT,
+                                        related_name='+', verbose_name='Typ: Kosiarz',
+                                        null=True, blank=True)
+    zwycięski_klub  = models.CharField('Typ: Zwycięski klub', max_length=100,
+                                       blank=True, default='')
+
+    class Meta:
+        verbose_name        = 'Typ gracza'
+        verbose_name_plural = 'Typy graczy'
+        unique_together     = [('turniej', 'gracz')]
+        ordering            = ['turniej', 'gracz__last_name']
+
+    def __str__(self):
+        return f'{self.gracz.display_name()} — {self.turniej.nazwa}'
+
+    def oblicz_punkty(self, wynik):
+        """
+        Oblicza punkty dla tego typa na podstawie obiektu WynikTurnieju.
+        Zwraca liczbę punktów (int).
+        """
+        if not wynik:
+            return 0
+
+        pkt = 0
+        podium_wynik  = [wynik.miejsce_1_id, wynik.miejsce_2_id, wynik.miejsce_3_id]
+        podium_wynik_bez_none = [p for p in podium_wynik if p]
+
+        # Miejsca 1-3: 2 pkt za dokładne trafienie, 1 pkt jeśli trafiony gracz jest gdzieś w podium
+        for typ_id, wynik_id, pozycja in [
+            (self.miejsce_1_id,  wynik.miejsce_1_id,  1),
+            (self.miejsce_2_id,  wynik.miejsce_2_id,  2),
+            (self.miejsce_3_id,  wynik.miejsce_3_id,  3),
+        ]:
+            if not typ_id:
+                continue
+            if typ_id == wynik_id:
+                pkt += 2
+            elif typ_id in podium_wynik_bez_none:
+                pkt += 1
+
+        # Ostatnie miejsce: 1 pkt
+        if self.miejsce_ostatnie_id and self.miejsce_ostatnie_id == wynik.miejsce_ostatnie_id:
+            pkt += 1
+
+        # Król strzelców: 1 pkt
+        if self.krol_strzelcow_id and self.krol_strzelcow_id == wynik.krol_strzelcow_id:
+            pkt += 1
+
+        # Murarz: 1 pkt
+        if self.murarz_id and self.murarz_id == wynik.murarz_id:
+            pkt += 1
+
+        # Kosiarz: 1 pkt
+        if self.kosiarz_id and self.kosiarz_id == wynik.kosiarz_id:
+            pkt += 1
+
+        # Zwycięski klub: 1 pkt
+        if self.zwycięski_klub and self.zwycięski_klub == wynik.zwycięski_klub:
+            pkt += 1
+
+        return pkt

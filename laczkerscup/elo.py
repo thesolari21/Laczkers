@@ -157,14 +157,18 @@ def get_elo_ranking():
         last_change    = history[-1].delta
         total_matches  = len(history)
 
-        # Liczymy wygrane
-        wins = 0
+        # Liczymy wygrane i punkty ligowe w jednej pętli
+        wins   = 0
+        points = 0
         for entry in history:
             m = entry.match
-            if (m.result == 'A' and m.player_a_id == player.id) or \
-               (m.result == 'B' and m.player_b_id == player.id):
-                wins += 1
-
+            is_winner = (m.result == 'A' and m.player_a_id == player.id) or \
+                        (m.result == 'B' and m.player_b_id == player.id)
+            if is_winner:
+                wins   += 1
+                points += 3
+            elif m.result == 'D':
+                points += 1
         win_pct = round(wins / total_matches * 100)
 
         # Forma — ostatnie 5 meczów
@@ -185,6 +189,7 @@ def get_elo_ranking():
             'matches':  total_matches,
             'change':   last_change,
             'win_pct':  win_pct,
+            'points':   points,
             'is_debut': False,
             'form':     form,
         })

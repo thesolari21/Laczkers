@@ -4,6 +4,7 @@ from .models import (
     Player, EloMatch, EloHistory,
     LosowanieELO, UczestnikLosowania, MeczLosowania,
     Turniej, Etap, UczestnikTurnieju, Mecz, WystepGracza,
+    WynikTurnieju, TypTurnieju,
 )
 
 
@@ -54,10 +55,32 @@ class UczestnikTurniejuInline(admin.TabularInline):
     autocomplete_fields = ['gracz']
 
 
+# ── Typer ─────────────────────────────────────────────────────────────
+
+class WynikTurniejuInline(admin.StackedInline):
+    model   = WynikTurnieju
+    extra   = 1
+    max_num = 1
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Ogranicz wybór graczy do uczestników danego turnieju."""
+        if db_field.name in ['miejsce_1', 'miejsce_2', 'miejsce_3', 'miejsce_ostatnie',
+                              'krol_strzelcow', 'murarz', 'kosiarz']:
+            turniej_id = request.resolver_match.kwargs.get('object_id')
+            if turniej_id:
+                kwargs['queryset'] = Player.objects.filter(
+                    id__in=UczestnikTurnieju.objects.filter(
+                        turniej_id=turniej_id
+                    ).values('gracz_id')
+                ).order_by('last_name')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
 @admin.register(Turniej)
 class TurniejAdmin(admin.ModelAdmin):
     list_display = ['nazwa', 'data_start', 'data_koniec', 'liczba_graczy']
-    inlines      = [EtapInline, UczestnikTurniejuInline]
+    fields       = ['nazwa', 'data_start', 'data_koniec', 'opis', 'notka', 'zdjecie']
+    inlines      = [EtapInline, UczestnikTurniejuInline, WynikTurniejuInline]
 
     def liczba_graczy(self, obj):
         return obj.uczestnicy.count()
@@ -149,3 +172,38 @@ class WystepGraczaAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False  # Zawsze generowane przez Mecz.przelicz_wystepy()
+
+
+
+@admin.register(TypTurnieju)
+class TypTurniejuAdmin(admin.ModelAdmin):
+    list_display  = ['gracz', 'turniej', 'punkty_display']
+    list_filter   = ['turniej']
+    ordering      = ['turniej', 'gracz__last_name']
+    autocomplete_fields = ['gracz']
+
+    def punkty_display(self, obj):
+        try:
+            wynik = obj.turniej.wynik
+        except WynikTurnieju.DoesNotExist:
+            return '—'
+        return obj.oblicz_punkty(wynik)
+    punkty_display.short_description = 'Punkty'
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        gracze_fk = ['miejsce_1', 'miejsce_2', 'miejsce_3', 'miejsce_ostatnie',
+                     'krol_strzelcow', 'murarz', 'kosiarz']
+        if db_field.name in gracze_fk:
+            # Przy edycji istniejącego rekordu — filtruj po turnieju
+            object_id = request.resolver_match.kwargs.get('object_id')
+            if object_id:
+                try:
+                    typ = TypTurnieju.objects.get(pk=object_id)
+                    kwargs['queryset'] = Player.objects.filter(
+                        id__in=UczestnikTurnieju.objects.filter(
+                            turniej=typ.turniej
+                        ).values('gracz_id')
+                    ).order_by('last_name')
+                except TypTurnieju.DoesNotExist:
+                    pass
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)

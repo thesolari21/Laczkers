@@ -1,0 +1,45 @@
+{% extends "laczkerscup/base.html" %}
+{% block title %}{{ turniej.nazwa }} — Notka{% endblock %}
+
+{% block hero %}
+<section class="hero">
+  <div class="container">
+    <p class="hero-eyebrow">Notka o turnieju</p>
+    <h1>{{ turniej.nazwa }}</h1>
+    {% if turniej.data_start %}
+    <p class="hero-sub">
+      {{ turniej.data_start|date:"d.m.Y" }}
+      {% if turniej.data_koniec %} — {{ turniej.data_koniec|date:"d.m.Y" }}{% endif %}
+    </p>
+    {% endif %}
+    <a href="{% url 'laczkerscup:turniej_detail' turniej.pk %}"
+       style="color:var(--yellow); font-size:.85rem; text-decoration:none;">
+      <i class="bi bi-arrow-left me-1"></i>Wróć do turnieju
+    </a>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:860px;">
+
+  {% if turniej.zdjecie %}
+  <div class="mb-4">
+    <img src="{{ turniej.zdjecie.url }}" alt="{{ turniej.nazwa }}"
+         style="width:100%; max-height:480px; object-fit:cover; border-radius:10px;">
+  </div>
+  {% endif %}
+
+  {% if turniej.notka %}
+  <div class="card-dark p-4" style="line-height:1.8; font-size:.97rem; color:#ddd;">
+    {{ turniej.notka|safe }}
+  </div>
+  {% else %}
+  <div class="card-dark p-4 text-center" style="color:#666;">
+    <i class="bi bi-journal-text mb-2 d-block" style="font-size:2rem;"></i>
+    Brak notki dla tego turnieju.
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

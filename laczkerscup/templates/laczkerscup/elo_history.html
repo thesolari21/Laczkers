@@ -23,9 +23,54 @@
     <i class="bi bi-clock-history icon"></i>Historia meczów
   </div>
 
+  {# Filtry #}
+  <div class="card-dark p-3 mb-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-sm-auto">
+        <label class="form-label text-light mb-1" style="font-size:.8rem;">Data (od)</label>
+        <input type="date" id="f-data-od" oninput="filtruj()" class="form-control form-control-sm"
+               style="background:var(--black-4); border-color:#444; color:#eee;">
+      </div>
+      <div class="col-sm-auto">
+        <label class="form-label text-light mb-1" style="font-size:.8rem;">Data (do)</label>
+        <input type="date" id="f-data-do" oninput="filtruj()" class="form-control form-control-sm"
+               style="background:var(--black-4); border-color:#444; color:#eee;">
+      </div>
+      <div class="col-sm">
+        <label class="form-label text-light mb-1" style="font-size:.8rem;">Przeciwnik</label>
+        <input type="text" id="f-przeciwnik" oninput="filtruj()" placeholder="wpisz nazwę..."
+               class="form-control form-control-sm"
+               style="background:var(--black-4); border-color:#444; color:#eee;">
+      </div>
+      <div class="col-sm-auto">
+        <label class="form-label text-light mb-1" style="font-size:.8rem;">Wynik</label>
+        <select id="f-wynik" oninput="filtruj()" class="form-select form-select-sm"
+                style="background:var(--black-4); border-color:#444; color:#eee;">
+          <option value="">Wszystkie</option>
+          <option value="Wygrana">Wygrana</option>
+          <option value="Remis">Remis</option>
+          <option value="Przegrana">Przegrana</option>
+        </select>
+      </div>
+      <div class="col-sm">
+        <label class="form-label text-light mb-1" style="font-size:.8rem;">Komentarz</label>
+        <input type="text" id="f-komentarz" oninput="filtruj()" placeholder="szukaj..."
+               class="form-control form-control-sm"
+               style="background:var(--black-4); border-color:#444; color:#eee;">
+      </div>
+      <div class="col-sm-auto">
+        <button onclick="resetFiltry()" class="btn btn-sm"
+                style="background:var(--black-4); color:#aaa; border:1px solid #444;">
+          Resetuj
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="brak-wynikow" class="d-none text-center py-3" style="color:#666;">Brak meczów spełniających kryteria.</div>
+
   <div class="card-dark">
     <div class="table-responsive">
-      <table class="table standings-table mb-0">
+      <table class="table standings-table mb-0" id="historia-tabela">
         <thead>
           <tr>
             <th>Data</th>
@@ -39,7 +84,11 @@
         </thead>
         <tbody>
           {% for entry in history %}
-          <tr>
+          <tr class="historia-row"
+              data-data="{{ entry.match.date|date:'Y-m-d' }}"
+              data-przeciwnik="{% if entry.match.player_a == player %}{{ entry.match.player_b }}{% else %}{{ entry.match.player_a }}{% endif %}"
+              data-wynik="{% if entry.match.result == 'D' %}Remis{% elif entry.match.result == 'A' and entry.match.player_a == player %}Wygrana{% elif entry.match.result == 'B' and entry.match.player_b == player %}Wygrana{% else %}Przegrana{% endif %}"
+              data-komentarz="{{ entry.match.notes|default:'' }}">
             <td style="white-space:nowrap;">{{ entry.match.date }}</td>
 
             {# Przeciwnik — z linkiem do jego historii #}
@@ -102,4 +151,41 @@
     </div>
   </div>
 </div>
+
+<script>
+function filtruj() {
+  const od         = document.getElementById('f-data-od').value;
+  const doo        = document.getElementById('f-data-do').value;
+  const przeciwnik = document.getElementById('f-przeciwnik').value.toLowerCase();
+  const wynik      = document.getElementById('f-wynik').value;
+  const komentarz  = document.getElementById('f-komentarz').value.toLowerCase();
+
+  let widoczne = 0;
+  document.querySelectorAll('.historia-row').forEach(row => {
+    const data   = row.dataset.data;
+    const przec  = row.dataset.przeciwnik.toLowerCase();
+    const wyn    = row.dataset.wynik;
+    const kom    = row.dataset.komentarz.toLowerCase();
+
+    const ok = (!od         || data >= od)
+            && (!doo        || data <= doo)
+            && (!przeciwnik || przec.includes(przeciwnik))
+            && (!wynik      || wyn === wynik)
+            && (!komentarz  || kom.includes(komentarz));
+
+    row.style.display = ok ? '' : 'none';
+    if (ok) widoczne++;
+  });
+
+  document.getElementById('brak-wynikow').classList.toggle('d-none', widoczne > 0);
+}
+
+function resetFiltry() {
+  ['f-data-od','f-data-do','f-przeciwnik','f-wynik','f-komentarz']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  filtruj();
+}
+
+
+</script>
 {% endblock %}

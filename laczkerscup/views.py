@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Sum, Count, Q, Avg, F
 from django.utils import timezone
 
-from .models import Player, EloHistory, Turniej, Etap, WystepGracza, Mecz
+from .models import Player, EloHistory, Turniej, Etap, WystepGracza, Mecz, SzwajcarKolejka, SzwajcarPara, WynikTurnieju, TypTurnieju
 from .elo import get_elo_ranking
 from .views_losowanie import losowanie_formularz, losowanie_wyniki, losowanie_lista
 from .views_szwajcar import szwajcar_formularz, szwajcar_usun_kolejke
@@ -312,6 +312,34 @@ def _klasyfikacja_klubowa(turniej):
     return ranking
 
 
+def _typer(turniej):
+    """
+    Zwraca ranking typerów dla danego turnieju.
+    Każdy wpis: {'gracz': Player, 'punkty': int, 'typ': TypTurnieju}
+    Posortowany malejąco po punktach.
+    """
+    try:
+        wynik = turniej.wynik
+    except WynikTurnieju.DoesNotExist:
+        wynik = None
+
+    typy = TypTurnieju.objects.filter(turniej=turniej).select_related(
+        'gracz', 'miejsce_1', 'miejsce_2', 'miejsce_3',
+        'miejsce_ostatnie', 'krol_strzelcow', 'murarz', 'kosiarz'
+    )
+
+    ranking = []
+    for typ in typy:
+        ranking.append({
+            'gracz':  typ.gracz,
+            'punkty': typ.oblicz_punkty(wynik),
+            'typ':    typ,
+        })
+
+    ranking.sort(key=lambda x: (-x['punkty'], x['gracz'].display_name().lower()))
+    return ranking, wynik
+
+
 # ─────────────────────────────────────────────────────────────────────
 #  WIDOKI
 # ─────────────────────────────────────────────────────────────────────
@@ -331,6 +359,7 @@ def index(request):
     nagrody              = _nagrody(turniej)
     kibice               = _kibice(turniej)
     klasyfikacja_klubowa = _klasyfikacja_klubowa(turniej)
+    typer_ranking, typer_wynik = _typer(turniej)
 
     return render(request, 'laczkerscup/index.html', {
         'turniej':              turniej,
@@ -340,6 +369,8 @@ def index(request):
         'nagrody':              nagrody,
         'kibice':               kibice,
         'klasyfikacja_klubowa': klasyfikacja_klubowa,
+        'typer':                typer_ranking,
+        'typer_wynik':          typer_wynik,
     })
 
 
@@ -371,15 +402,18 @@ def turniej_detail(request, pk):
     nagrody              = _nagrody(turniej)
     kibice               = _kibice(turniej)
     klasyfikacja_klubowa = _klasyfikacja_klubowa(turniej)
+    typer_ranking, typer_wynik = _typer(turniej)
 
     return render(request, 'laczkerscup/index.html', {
-        'turniej':             turniej,
-        'stats':               stats,
-        'poziomy_etapow':      poziomy_etapow,
-        'harmonogram':         harmonogram,
-        'nagrody':             nagrody,
-        'kibice':              kibice,
+        'turniej':              turniej,
+        'stats':                stats,
+        'poziomy_etapow':       poziomy_etapow,
+        'harmonogram':          harmonogram,
+        'nagrody':              nagrody,
+        'kibice':               kibice,
         'klasyfikacja_klubowa': klasyfikacja_klubowa,
+        'typer':                typer_ranking,
+        'typer_wynik':          typer_wynik,
     })
 
 
@@ -414,6 +448,14 @@ def gracz_w_turnieju(request, turniej_pk, gracz_pk):
         'sumy':    sumy,
     })
 
+
+
+def turniej_notka(request, pk):
+    """Notka / artykuł o turnieju ze zdjęciem."""
+    turniej = get_object_or_404(Turniej, pk=pk)
+    return render(request, 'laczkerscup/turniej_notka.html', {
+        'turniej': turniej,
+    })
 
 def elo(request):
     ranking = get_elo_ranking()

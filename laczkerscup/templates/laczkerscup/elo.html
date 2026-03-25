@@ -30,7 +30,12 @@
               <tr>
                 <th class="text-center">#</th>
                 <th>Gracz</th>
-                <th class="text-center">Rating ELO</th>
+                <th class="text-center sortable" onclick="sortujTabele('rating')" style="cursor:pointer;" title="Sortuj po ratingu">
+                  Rating ELO <span id="sort-rating">↕</span>
+                </th>
+                <th class="text-center sortable" onclick="sortujTabele('points')" style="cursor:pointer;" title="Sortuj po punktach">
+                  Pkt <span id="sort-points">↕</span>
+                </th>
                 <th class="text-center">Mecze</th>
                 <th class="text-center">% Wygranych</th>
               </tr>
@@ -53,9 +58,12 @@
                   {% endif %}
                 </td>
 
-                <td class="text-center pts">{{ entry.rating }}</td>
+                <td class="text-center pts" data-sort="rating" data-val="{{ entry.rating }}">{{ entry.rating }}</td>
+                <td class="text-center fw-bold" data-sort="points" data-val="{{ entry.points }}"
+                    style="color:{% if entry.points > 0 %}var(--yellow){% else %}#666{% endif %};">
+                  {{ entry.points }}
+                </td>
                 <td class="text-center">{{ entry.matches }}</td>
-
                 <td class="text-center">
                   {% if entry.is_debut %}
                     <span style="color:#aaa;">—</span>
@@ -67,7 +75,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="5" class="text-center" style="color:#aaa;padding:2rem;">
+                <td colspan="6" class="text-center" style="color:#aaa;padding:2rem;">
                   Brak graczy w rankingu.
                 </td>
               </tr>
@@ -185,4 +193,28 @@
 
   </div>{# /.row #}
 </div>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script>
+let sortDir = { rating: -1, points: -1 };
+
+function sortujTabele(kolumna) {
+  const tbody = document.querySelector('.standings-table tbody');
+  const rows  = Array.from(tbody.querySelectorAll('tr')).filter(r => r.cells.length > 3);
+
+  sortDir[kolumna] *= -1;
+
+  document.querySelectorAll('[id^="sort-"]').forEach(el => el.textContent = '↕');
+  document.getElementById('sort-' + kolumna).textContent = sortDir[kolumna] === -1 ? '↓' : '↑';
+
+  rows.sort((a, b) => {
+    const cellA = a.querySelector(`[data-sort="${kolumna}"]`);
+    const cellB = b.querySelector(`[data-sort="${kolumna}"]`);
+    const va = parseInt(cellA?.dataset?.val ?? 0);
+    const vb = parseInt(cellB?.dataset?.val ?? 0);
+    return sortDir[kolumna] * (vb - va);
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+}
+</script>
 {% endblock %}

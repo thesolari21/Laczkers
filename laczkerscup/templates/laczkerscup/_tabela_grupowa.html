@@ -6,11 +6,11 @@
           <th class="text-center">#</th>
           <th>Gracz</th>
           <th class="text-center" title="Mecze">M</th>
+          <th class="text-center" title="Punkty">PKT</th>
           <th class="text-center" title="Bilans W-R-P">Bilans</th>
           <th class="text-center" title="Bramki zdobyte">G+</th>
           <th class="text-center" title="Bramki stracone">G-</th>
           <th class="text-center" title="Forma">Forma</th>
-          <th class="text-center" title="Punkty">PKT</th>
         </tr>
       </thead>
       <tbody>
@@ -24,6 +24,7 @@
             </a>
           </td>
           <td class="text-center">{{ w.mecze }}</td>
+          <td class="text-center pts">{{ w.punkty }}</td>
           <td class="text-center" style="font-size:.85rem; letter-spacing:1px;">
             <span style="color:#2ecc71;">{{ w.wygrane }}</span>-<span style="color:#aaa;">{{ w.remisy }}</span>-<span style="color:#e74c3c;">{{ w.przegrane }}</span>
           </td>
@@ -37,7 +38,6 @@
               {% endif %}
             {% endfor %}
           </td>
-          <td class="text-center pts">{{ w.punkty }}</td>
         </tr>
         {% empty %}
         <tr>
