@@ -25,7 +25,17 @@ class Player(models.Model):
         return f'{self.first_name} {self.last_name}'
 
     def display_name(self):
-        return self.nickname or f'{self.last_name} {self.first_name[0]}.'
+        if self.nickname:
+            return self.nickname
+        # Sprawdź czy jest inny aktywny gracz z tym samym nazwiskiem i tą samą pierwszą literą imienia
+        from django.db.models import Q
+        duplikat = Player.objects.filter(
+            last_name=self.last_name,
+            is_active=True,
+        ).exclude(pk=self.pk).filter(first_name__startswith=self.first_name[0]).exists()
+        if duplikat:
+            return f'{self.last_name} {self.first_name[:2]}.'
+        return f'{self.last_name} {self.first_name[0]}.' 
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -174,6 +184,12 @@ class Etap(models.Model):
         upload_to='drabinki/',
         blank=True, null=True,
         help_text='Wyświetlany przy etapach pucharowych. Zostaw puste = placeholder.'
+    )
+    sumuj_punkty_z_poprzednich = models.BooleanField(
+        'Sumuj punkty z poprzednich poziomów',
+        default=False,
+        help_text='Jeśli zaznaczone, punkty gracza ze wszystkich etapów grupowych '
+                  'o niższym poziomie w tym turnieju zostaną dodane jako punkty startowe.'
     )
 
     class Meta:

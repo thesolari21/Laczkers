@@ -296,27 +296,39 @@
 
 <hr class="divider" />
 
-{# ══ NAGRODY INDYWIDUALNE ══════════════════════════════════════════ #}
+{# ══ KLASYFIKACJE ══════════════════════════════════════════════════ #}
 <div class="section-title">
   <i class="bi bi-award-fill icon"></i>Klasyfikacje
 </div>
+
+{# Styl modalów #}
+<style>
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:1000; align-items:center; justify-content:center; }
+.modal-overlay.active { display:flex; }
+.modal-box { background:var(--black-3); border:1px solid #333; border-radius:10px; width:min(600px, 95vw); max-height:85vh; overflow-y:auto; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; padding:.75rem 1rem; border-bottom:1px solid #333; }
+.modal-close { background:none; border:none; color:#aaa; font-size:1.4rem; cursor:pointer; line-height:1; }
+.modal-close:hover { color:#fff; }
+</style>
 
 <div class="row g-4 mb-4">
 
   {# Król strzelców #}
   <div class="col-md">
     <div class="card-dark h-100">
-      <div class="card-dark-header">
-        <i class="bi bi-bullseye me-2" style="color:var(--yellow);"></i>Król strzelców
-        <small style="font-size:.7rem; color:#bbb;">najwięcej bramek</small>
+      <div class="card-dark-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="bi bi-bullseye me-2" style="color:var(--yellow);"></i>Król strzelców</span>
+        {% if nagrody.krol_full|length > 3 %}
+        <button onclick="pokazModal('modal-krol')" style="background:none; border:none; color:#888; font-size:.75rem; cursor:pointer;">
+          Wszyscy →
+        </button>
+        {% endif %}
       </div>
       {% if nagrody.krol %}
       <table class="table table-sm mb-0" style="color:#eee;">
         <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
-          <th class="ps-3" style="width:28px;">#</th>
-          <th>Gracz</th>
-          <th class="text-center">Gole</th>
-          <th class="text-center">M</th>
+          <th class="ps-3" style="width:28px;">#</th><th>Gracz</th>
+          <th class="text-center">Gole</th><th class="text-center">M</th>
         </tr></thead>
         <tbody>
           {% for r in nagrody.krol %}
@@ -329,26 +341,26 @@
           {% endfor %}
         </tbody>
       </table>
-      {% else %}
-      <p class="text-muted text-center py-3 mb-0">Brak danych</p>
-      {% endif %}
+      {% else %}<p class="text-muted text-center py-3 mb-0">Brak danych</p>{% endif %}
     </div>
   </div>
 
   {# Murarz #}
   <div class="col-md">
     <div class="card-dark h-100">
-      <div class="card-dark-header">
-        <i class="bi bi-shield-fill me-2" style="color:#3498db;"></i>Murarz
-        <small style="font-size:.7rem; color:#bbb;">najmniej straconych</small>
+      <div class="card-dark-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="bi bi-shield-fill me-2" style="color:#3498db;"></i>Murarz</span>
+        {% if nagrody.murarz_full|length > 3 %}
+        <button onclick="pokazModal('modal-murarz')" style="background:none; border:none; color:#888; font-size:.75rem; cursor:pointer;">
+          Wszyscy →
+        </button>
+        {% endif %}
       </div>
       {% if nagrody.murarz %}
       <table class="table table-sm mb-0" style="color:#eee;">
         <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
-          <th class="ps-3" style="width:28px;">#</th>
-          <th>Gracz</th>
-          <th class="text-center">G-</th>
-          <th class="text-center">M</th>
+          <th class="ps-3" style="width:28px;">#</th><th>Gracz</th>
+          <th class="text-center">G-</th><th class="text-center">M</th>
         </tr></thead>
         <tbody>
           {% for r in nagrody.murarz %}
@@ -361,27 +373,27 @@
           {% endfor %}
         </tbody>
       </table>
-      {% else %}
-      <p class="text-muted text-center py-3 mb-0">Brak danych</p>
-      {% endif %}
+      {% else %}<p class="text-muted text-center py-3 mb-0">Brak danych</p>{% endif %}
     </div>
   </div>
 
   {# Kosiarz #}
   <div class="col-md">
     <div class="card-dark h-100">
-      <div class="card-dark-header">
-        <i class="bi bi-emoji-angry-fill me-2" style="color:#e74c3c;"></i>Kosiarz
-        <small style="font-size:.7rem; color:#bbb;">żółta=1pkt, czerwona=2pkt</small>
+      <div class="card-dark-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="bi bi-emoji-angry-fill me-2" style="color:#e74c3c;"></i>Kosiarz</span>
+        {% if nagrody.kosiarz_full|length > 3 %}
+        <button onclick="pokazModal('modal-kosiarz')" style="background:none; border:none; color:#888; font-size:.75rem; cursor:pointer;">
+          Wszyscy →
+        </button>
+        {% endif %}
       </div>
       {% if nagrody.kosiarz %}
       <table class="table table-sm mb-0" style="color:#eee;">
         <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
-          <th class="ps-3" style="width:28px;">#</th>
-          <th>Gracz</th>
+          <th class="ps-3" style="width:28px;">#</th><th>Gracz</th>
           <th class="text-center">Pkt</th>
-          <th class="text-center">🟨</th>
-          <th class="text-center">🟥</th>
+          <th class="text-center">🟨</th><th class="text-center">🟥</th>
         </tr></thead>
         <tbody>
           {% for r in nagrody.kosiarz %}
@@ -395,28 +407,28 @@
           {% endfor %}
         </tbody>
       </table>
-      {% else %}
-      <p class="text-muted text-center py-3 mb-0">Brak danych</p>
-      {% endif %}
+      {% else %}<p class="text-muted text-center py-3 mb-0">Brak danych</p>{% endif %}
     </div>
   </div>
 
   {# Wierny kibic #}
   <div class="col-md">
     <div class="card-dark h-100">
-      <div class="card-dark-header">
-        <i class="bi bi-trophy-fill me-2" style="color:var(--yellow);"></i>Wierny kibic
-        <small style="font-size:.7rem; color:#bbb;">ranking klubów</small>
+      <div class="card-dark-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="bi bi-trophy-fill me-2" style="color:var(--yellow);"></i>Wierny kibic</span>
+        {% if klasyfikacja_klubowa|length > 3 %}
+        <button onclick="pokazModal('modal-kibic')" style="background:none; border:none; color:#888; font-size:.75rem; cursor:pointer;">
+          Wszyscy →
+        </button>
+        {% endif %}
       </div>
       <table class="table table-sm mb-0" style="color:#eee;">
         <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
-          <th class="ps-3" style="width:28px;">#</th>
-          <th>Klub</th>
-          <th class="text-center">Pkt</th>
-          <th class="text-center">%</th>
+          <th class="ps-3" style="width:28px;">#</th><th>Klub</th>
+          <th class="text-center">Pkt</th><th class="text-center">%</th>
         </tr></thead>
         <tbody>
-          {% for r in klasyfikacja_klubowa %}
+          {% for r in klasyfikacja_klubowa|slice:":3" %}
           <tr>
             <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
             <td>{{ r.klub }}</td>
@@ -438,18 +450,21 @@
   {# Typer #}
   <div class="col-md">
     <div class="card-dark h-100">
-      <div class="card-dark-header">
-        <i class="bi bi-pencil-square me-2" style="color:#a78bfa;"></i>Typer
-        <small style="font-size:.7rem; color:#bbb;">ranking typujących</small>
+      <div class="card-dark-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="bi bi-pencil-square me-2" style="color:#a78bfa;"></i>Typer</span>
+        {% if typer %}
+        <button onclick="pokazModal('modal-typer')" style="background:none; border:none; color:#888; font-size:.75rem; cursor:pointer;">
+          Szczegóły →
+        </button>
+        {% endif %}
       </div>
       <table class="table table-sm mb-0" style="color:#eee;">
         <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
-          <th class="ps-3" style="width:28px;">#</th>
-          <th>Gracz</th>
+          <th class="ps-3" style="width:28px;">#</th><th>Gracz</th>
           <th class="text-center">Pkt</th>
         </tr></thead>
         <tbody>
-          {% for r in typer %}
+          {% for r in typer|slice:":3" %}
           <tr>
             <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
             <td>{{ r.gracz.display_name }}</td>
@@ -460,18 +475,168 @@
           {% endfor %}
         </tbody>
       </table>
-      {% if typer_wynik %}
-      <div class="p-2" style="font-size:.75rem; color:#666; border-top:1px solid #333;">
-        Max: 11 pkt
-      </div>
-      {% else %}
-      <div class="p-2" style="font-size:.75rem; color:#666; border-top:1px solid #333;">
-        Wyniki turnieju jeszcze nie wpisane
-      </div>
+      {% if not typer_wynik %}
+      <div class="p-2" style="font-size:.75rem; color:#666; border-top:1px solid #333;">Wyniki jeszcze nie wpisane</div>
       {% endif %}
     </div>
   </div>
 
+</div>
+
+{# ══ MODALE ═════════════════════════════════════════════════════════ #}
+
+{# Modal: Król strzelców #}
+<div id="modal-krol" class="modal-overlay" onclick="zamknijModal(event, this)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="color:var(--yellow); font-weight:600;"><i class="bi bi-bullseye me-2"></i>Król strzelców — pełna klasyfikacja</span>
+      <button class="modal-close" onclick="ukryjModal('modal-krol')">×</button>
+    </div>
+    <table class="table table-sm mb-0" style="color:#eee;">
+      <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+        <th class="ps-3" style="width:28px;">#</th><th>Gracz</th>
+        <th class="text-center">Gole</th><th class="text-center">Mecze</th>
+      </tr></thead>
+      <tbody>
+        {% for r in nagrody.krol_full %}
+        <tr>
+          <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
+          <td>{{ r.gracz.display_name }}</td>
+          <td class="text-center fw-bold" style="color:var(--yellow);">{{ r.gole }}</td>
+          <td class="text-center text-muted">{{ r.mecze }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Modal: Murarz #}
+<div id="modal-murarz" class="modal-overlay" onclick="zamknijModal(event, this)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="color:#3498db; font-weight:600;"><i class="bi bi-shield-fill me-2"></i>Murarz — pełna klasyfikacja</span>
+      <button class="modal-close" onclick="ukryjModal('modal-murarz')">×</button>
+    </div>
+    <table class="table table-sm mb-0" style="color:#eee;">
+      <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+        <th class="ps-3" style="width:28px;">#</th><th>Gracz</th>
+        <th class="text-center">G-</th><th class="text-center">Mecze</th>
+      </tr></thead>
+      <tbody>
+        {% for r in nagrody.murarz_full %}
+        <tr>
+          <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
+          <td>{{ r.gracz.display_name }}</td>
+          <td class="text-center fw-bold" style="color:#3498db;">{{ r.stracone }}</td>
+          <td class="text-center text-muted">{{ r.mecze }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Modal: Kosiarz #}
+<div id="modal-kosiarz" class="modal-overlay" onclick="zamknijModal(event, this)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="color:#e74c3c; font-weight:600;"><i class="bi bi-emoji-angry-fill me-2"></i>Kosiarz — pełna klasyfikacja</span>
+      <button class="modal-close" onclick="ukryjModal('modal-kosiarz')">×</button>
+    </div>
+    <table class="table table-sm mb-0" style="color:#eee;">
+      <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+        <th class="ps-3" style="width:28px;">#</th><th>Gracz</th>
+        <th class="text-center">Pkt</th><th class="text-center">🟨</th><th class="text-center">🟥</th>
+      </tr></thead>
+      <tbody>
+        {% for r in nagrody.kosiarz_full %}
+        <tr>
+          <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
+          <td>{{ r.gracz.display_name }}</td>
+          <td class="text-center fw-bold" style="color:#e74c3c;">{{ r.punkty_kartek }}</td>
+          <td class="text-center text-muted">{{ r.zolte }}</td>
+          <td class="text-center text-muted">{{ r.czerwone }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Modal: Wierny kibic #}
+<div id="modal-kibic" class="modal-overlay" onclick="zamknijModal(event, this)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="color:var(--yellow); font-weight:600;"><i class="bi bi-trophy-fill me-2"></i>Wierny kibic — pełna klasyfikacja</span>
+      <button class="modal-close" onclick="ukryjModal('modal-kibic')">×</button>
+    </div>
+    <table class="table table-sm mb-0" style="color:#eee;">
+      <thead><tr style="background:var(--black-4); color:#aaa; font-size:.8rem;">
+        <th class="ps-3" style="width:28px;">#</th><th>Klub</th>
+        <th class="text-center">Pkt</th><th class="text-center">Maks</th><th class="text-center">%</th>
+      </tr></thead>
+      <tbody>
+        {% for r in klasyfikacja_klubowa %}
+        <tr>
+          <td class="ps-3 rank rank-{{ forloop.counter }}">{{ forloop.counter }}</td>
+          <td>{{ r.klub }}</td>
+          <td class="text-center fw-bold" style="color:var(--yellow);">{{ r.zdobyte }}</td>
+          <td class="text-center text-muted">{{ r.mozliwe }}</td>
+          <td class="text-center fw-bold">
+            <span style="color:{% if r.wspolczynnik >= 60 %}#2ecc71{% elif r.wspolczynnik >= 40 %}var(--yellow){% else %}#e74c3c{% endif %};">
+              {{ r.wspolczynnik }}%
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Modal: Typer #}
+<div id="modal-typer" class="modal-overlay" onclick="zamknijModal(event, this)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="color:#a78bfa; font-weight:600;"><i class="bi bi-pencil-square me-2"></i>Typer — szczegóły</span>
+      <button class="modal-close" onclick="ukryjModal('modal-typer')">×</button>
+    </div>
+    <div class="table-responsive">
+    <table class="table table-sm mb-0" style="color:#eee; font-size:.82rem;">
+      <thead><tr style="background:var(--black-4); color:#aaa; font-size:.78rem;">
+        <th class="ps-3">Gracz</th>
+        <th class="text-center">1.</th>
+        <th class="text-center">2.</th>
+        <th class="text-center">3.</th>
+        <th class="text-center">Ost.</th>
+        <th class="text-center">Król</th>
+        <th class="text-center">Mur.</th>
+        <th class="text-center">Kos.</th>
+        <th class="text-center">Klub</th>
+        <th class="text-center" style="color:#a78bfa;">Pkt</th>
+      </tr></thead>
+      <tbody>
+        {% for r in typer %}
+        <tr>
+          <td class="ps-3 fw-semibold">{{ r.gracz.display_name }}</td>
+          <td class="text-center">{{ r.typ.miejsce_1.display_name|default:"—" }}</td>
+          <td class="text-center">{{ r.typ.miejsce_2.display_name|default:"—" }}</td>
+          <td class="text-center">{{ r.typ.miejsce_3.display_name|default:"—" }}</td>
+          <td class="text-center">{{ r.typ.miejsce_ostatnie.display_name|default:"—" }}</td>
+          <td class="text-center">{{ r.typ.krol_strzelcow.display_name|default:"—" }}</td>
+          <td class="text-center">{{ r.typ.murarz.display_name|default:"—" }}</td>
+          <td class="text-center">{{ r.typ.kosiarz.display_name|default:"—" }}</td>
+          <td class="text-center">{{ r.typ.zwycięski_klub|default:"—" }}</td>
+          <td class="text-center fw-bold" style="color:#a78bfa;">{{ r.punkty }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="text-center py-3" style="color:#666;">Brak typów</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
 </div>
 
 {% endif %}{# brak_turnieju #}
@@ -502,5 +667,25 @@ function rozwinHarm(typ) {
   rest.classList.remove('d-none');
   btn.remove();
 }
+
+function pokazModal(id) {
+  document.getElementById(id).classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function ukryjModal(id) {
+  document.getElementById(id).classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function zamknijModal(event, overlay) {
+  if (event.target === overlay) ukryjModal(overlay.id);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.active').forEach(m => ukryjModal(m.id));
+  }
+});
 </script>
 {% endblock %}

@@ -56,12 +56,15 @@ def _statystyki_turnieju(turniej):
 def _tabela_grupowa(etap):
     """
     Buduje tabelę wyników dla jednego etapu grupowego.
+
+    Jeśli etap.przenies_punkty_z jest ustawiony, punkty z tamtego etapu
+    są dodawane jako punkty startowe (bez bramek/kartek).
+
     Sortowanie:
-      1. Punkty
-      2. Różnica bramek ogółem
+      1. Punkty łącznie (z etapu + startowe)
+      2. Różnica bramek ogółem (tylko z tego etapu)
       3. Bramki zdobyte ogółem
-      4. Kolejność alfabetyczna (nick/nazwisko)
-    Komentarze opisują kolejne poziomy kryterium — łatwo rozbudować.
+      4. Kolejność alfabetyczna
     """
     wystepy = (
         WystepGracza.objects
@@ -77,8 +80,24 @@ def _tabela_grupowa(etap):
         )
     )
 
-    # Zlicz W/R/P osobno
-    wygrane    = {
+    # Punkty startowe — sumuj ze wszystkich etapów grupowych o niższym poziomie
+    punkty_startowe = {}
+    if etap.sumuj_punkty_z_poprzednich:
+        etapy_nizszego_poziomu = Etap.objects.filter(
+            turniej=etap.turniej,
+            typ='grupowy',
+            poziom__lt=etap.poziom,
+        )
+        for row in (
+            WystepGracza.objects
+            .filter(etap__in=etapy_nizszego_poziomu)
+            .values('gracz')
+            .annotate(suma=Sum('punkty'))
+        ):
+            punkty_startowe[row['gracz']] = row['suma'] or 0
+
+    # Zlicz W/R/P osobno (tylko mecze z tego etapu)
+    wygrane = {
         w['gracz']: w['cnt']
         for w in WystepGracza.objects.filter(etap=etap, punkty=3)
         .values('gracz').annotate(cnt=Count('id'))
@@ -94,7 +113,7 @@ def _tabela_grupowa(etap):
         .values('gracz').annotate(cnt=Count('id'))
     }
 
-    # Forma — ostatnie 5 wyników (najnowsze mecze wg id)
+    # Forma — ostatnie 5 wyników (tylko z tego etapu)
     forma_raw = {}
     for w in WystepGracza.objects.filter(etap=etap).select_related('gracz').order_by('-mecz__id'):
         pid = w.gracz_id
@@ -108,37 +127,65 @@ def _tabela_grupowa(etap):
             else:
                 forma_raw[pid].append('P')
 
-    # Pobierz imiona graczy
+    # Gracze którzy mają punkty startowe ale jeszcze nie grali w tym etapie
+    # — dodaj ich do wyników z zerami
+    gracz_ids_w_etapie = {row['gracz'] for row in wystepy}
+    gracze_tylko_startowe = {
+        pid for pid in punkty_startowe
+        if pid not in gracz_ids_w_etapie
+    }
+
     gracze = {p.pk: p for p in Player.objects.all()}
 
     wiersze = []
+
+    # Gracze z meczami w tym etapie
     for row in wystepy:
-        pid  = row['gracz']
+        pid   = row['gracz']
         gracz = gracze.get(pid)
         if not gracz:
             continue
-        roznica = (row['gole_za'] or 0) - (row['gole_str'] or 0)
+        roznica  = (row['gole_za'] or 0) - (row['gole_str'] or 0)
+        pkt_start = punkty_startowe.get(pid, 0)
         wiersze.append({
-            'gracz':    gracz,
-            'mecze':    row['mecze'],
-            'wygrane':  wygrane.get(pid, 0),
-            'remisy':   remisy.get(pid, 0),
-            'przegrane': przegrane.get(pid, 0),
-            'gole_za':  row['gole_za'] or 0,
-            'gole_str': row['gole_str'] or 0,
-            'roznica':  roznica,
-            'forma':    forma_raw.get(pid, []),
-            'punkty':   row['punkty'] or 0,
+            'gracz':         gracz,
+            'mecze':         row['mecze'],
+            'wygrane':       wygrane.get(pid, 0),
+            'remisy':        remisy.get(pid, 0),
+            'przegrane':     przegrane.get(pid, 0),
+            'gole_za':       row['gole_za'] or 0,
+            'gole_str':      row['gole_str'] or 0,
+            'roznica':       roznica,
+            'forma':         forma_raw.get(pid, []),
+            'punkty':        (row['punkty'] or 0) + pkt_start,
+            'pkt_startowe':  pkt_start,
         })
 
-    # Sortowanie — kolejne kryteria opisane w komentarzach
+    # Gracze tylko z punktami startowymi (0 meczów w tym etapie)
+    for pid in gracze_tylko_startowe:
+        gracz = gracze.get(pid)
+        if not gracz:
+            continue
+        wiersze.append({
+            'gracz':         gracz,
+            'mecze':         0,
+            'wygrane':       0,
+            'remisy':        0,
+            'przegrane':     0,
+            'gole_za':       0,
+            'gole_str':      0,
+            'roznica':       0,
+            'forma':         [],
+            'punkty':        punkty_startowe[pid],
+            'pkt_startowe':  punkty_startowe[pid],
+        })
+
+    # Sortowanie
     wiersze.sort(key=lambda r: (
-        -r['punkty'],          # 1. Punkty (malejąco)
-        -r['roznica'],         # 2. Różnica bramek ogółem
-        -r['gole_za'],         # 3. Bramki zdobyte ogółem
-        # 4. Tu można dodać: punkty w meczach bezpośrednich
-        # 5. Tu można dodać: różnica bramek w meczach bezpośrednich
-        r['gracz'].display_name().lower(),  # Ostateczny: alfabetycznie
+        -r['punkty'],
+        -r['roznica'],
+        -r['gole_za'],
+        r['gracz'].display_name().lower(),
     ))
 
     return wiersze
@@ -233,10 +280,37 @@ def _nagrody(turniej):
                 wynik.append(entry)
         return wynik
 
+    # Pełne listy (bez limitu [:3]) dla modali
+    krol_full = list(
+        wystepy.values('gracz')
+        .annotate(gole=Sum('gole_strzelone'), mecze=Count('id'))
+        .filter(gole__gt=0)
+        .order_by('-gole', 'gracz__last_name')
+    )
+    murarz_full = list(
+        wystepy.filter(mecz__status='rozegrany')
+        .values('gracz')
+        .annotate(stracone=Sum('gole_stracone'), mecze=Count('id'))
+        .order_by('stracone', 'gracz__last_name')
+    )
+    kosiarz_full = list(
+        wystepy.values('gracz')
+        .annotate(
+            punkty_kartek=Sum(F('zolte_kartki') + F('czerwone_kartki') * 2),
+            zolte=Sum('zolte_kartki'),
+            czerwone=Sum('czerwone_kartki'),
+        )
+        .filter(punkty_kartek__gt=0)
+        .order_by('-punkty_kartek', 'gracz__last_name')
+    )
+
     return {
-        'krol':    wzbogac(krol,    ['gole', 'mecze']),
-        'murarz':  wzbogac(murarz,  ['stracone', 'mecze']),
-        'kosiarz': wzbogac(kosiarz, ['punkty_kartek', 'zolte', 'czerwone']),
+        'krol':         wzbogac(krol,         ['gole', 'mecze']),
+        'murarz':       wzbogac(murarz,        ['stracone', 'mecze']),
+        'kosiarz':      wzbogac(kosiarz,       ['punkty_kartek', 'zolte', 'czerwone']),
+        'krol_full':    wzbogac(krol_full,     ['gole', 'mecze']),
+        'murarz_full':  wzbogac(murarz_full,   ['stracone', 'mecze']),
+        'kosiarz_full': wzbogac(kosiarz_full,  ['punkty_kartek', 'zolte', 'czerwone']),
     }
 
 

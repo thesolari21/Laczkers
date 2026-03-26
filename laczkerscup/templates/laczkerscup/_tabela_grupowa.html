@@ -10,6 +10,7 @@
           <th class="text-center" title="Bilans W-R-P">Bilans</th>
           <th class="text-center" title="Bramki zdobyte">G+</th>
           <th class="text-center" title="Bramki stracone">G-</th>
+          <th class="text-center" title="Bilans bramkowy">Bil</th>
           <th class="text-center" title="Forma">Forma</th>
         </tr>
       </thead>
@@ -24,12 +25,22 @@
             </a>
           </td>
           <td class="text-center">{{ w.mecze }}</td>
-          <td class="text-center pts">{{ w.punkty }}</td>
+          <td class="text-center pts">
+            {{ w.punkty }}
+            {% if w.pkt_startowe %}
+            <span style="font-size:.65rem; color:#888; font-weight:400;" title="w tym {{ w.pkt_startowe }} pkt z poprzednich poziomów">
+              ({{ w.pkt_startowe }}↑)
+            </span>
+            {% endif %}
+          </td>
           <td class="text-center" style="font-size:.85rem; letter-spacing:1px;">
             <span style="color:#2ecc71;">{{ w.wygrane }}</span>-<span style="color:#aaa;">{{ w.remisy }}</span>-<span style="color:#e74c3c;">{{ w.przegrane }}</span>
           </td>
           <td class="text-center">{{ w.gole_za }}</td>
           <td class="text-center">{{ w.gole_str }}</td>
+          <td class="text-center" style="font-weight:600; color:{% if w.roznica > 0 %}#2ecc71{% elif w.roznica < 0 %}#e74c3c{% else %}#aaa{% endif %};">
+            {% if w.roznica > 0 %}+{{ w.roznica }}{% else %}{{ w.roznica }}{% endif %}
+          </td>
           <td>
             {% for r in w.forma %}
               {% if r == 'W' %}<span class="form-badge form-w">W</span>

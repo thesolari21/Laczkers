@@ -44,7 +44,7 @@ class EtapInline(admin.TabularInline):
     """Etapy edytowalne bezpośrednio na stronie turnieju."""
     model  = Etap
     extra  = 1
-    fields = ['nazwa', 'typ', 'poziom']
+    fields = ['nazwa', 'typ', 'poziom', 'sumuj_punkty_z_poprzednich']
 
 
 class UczestnikTurniejuInline(admin.TabularInline):
