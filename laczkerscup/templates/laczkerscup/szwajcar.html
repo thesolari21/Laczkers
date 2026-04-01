@@ -136,6 +136,21 @@
           <i class="bi bi-clock-history me-2"></i>Historia kolejek
         </div>
 
+        {# Wybór etapu do importu #}
+        <div class="p-3 pb-0">
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <label class="text-light" style="font-size:.85rem; white-space:nowrap;">Etap do importu:</label>
+            <select id="etap-import-select" class="form-select form-select-sm"
+                    style="background:var(--black-5); border-color:#444; color:#eee; max-width:260px;">
+              <option value="">— wybierz etap —</option>
+              {% for e in etapy_import %}
+              <option value="{{ e.pk }}">{{ e.nazwa }}</option>
+              {% endfor %}
+            </select>
+            <small style="color:#666; font-size:.75rem;">wybierz etap, potem kliknij Importuj przy kolejce</small>
+          </div>
+        </div>
+
         {# Zakładki kolejek #}
         <div style="overflow-x:auto; white-space:nowrap; padding:.5rem .75rem 0;">
           {% for k in kolejki %}
@@ -177,16 +192,34 @@
             </tbody>
           </table>
 
-          {# Usuń tylko ostatnią kolejkę #}
-          {% if forloop.last %}
-          <div class="text-end mt-2">
+          {# Przyciski akcji #}
+          <div class="d-flex justify-content-between align-items-center mt-2">
+            <div>
+              {% if k.zaimportowana %}
+              <span style="color:#2ecc71; font-size:.78rem;">
+                <i class="bi bi-check-circle-fill me-1"></i>Zaimportowana
+              </span>
+              {% else %}
+              <form method="post" action="{% url 'laczkerscup:szwajcar_importuj' k.pk %}"
+                    onsubmit="return sprawdzEtap()">
+                {% csrf_token %}
+                <input type="hidden" name="etap" id="etap-hidden-{{ k.pk }}">
+                <button type="submit" class="btn btn-sm"
+                        style="background:#a78bfa; color:#000; border:none; font-size:.75rem;"
+                        onclick="ustawEtap('{{ k.pk }}')">
+                  <i class="bi bi-box-arrow-in-down me-1"></i>Importuj kolejkę {{ k.numer }}
+                </button>
+              </form>
+              {% endif %}
+            </div>
+            {% if forloop.last and not k.zaimportowana %}
             <a href="{% url 'laczkerscup:szwajcar_usun' k.pk %}"
                onclick="return confirm('Usunąć kolejkę {{ k.numer }}?')"
                class="btn btn-sm btn-outline-danger" style="font-size:.75rem;">
-              <i class="bi bi-trash me-1"></i>Usuń tę kolejkę
+              <i class="bi bi-trash me-1"></i>Usuń
             </a>
+            {% endif %}
           </div>
-          {% endif %}
         </div>
         {% endfor %}
 
@@ -206,6 +239,20 @@
 </div>
 
 <script>
+function sprawdzEtap() {
+  const etap = document.getElementById('etap-import-select').value;
+  if (!etap) {
+    alert('Wybierz etap do importu przed kliknięciem Importuj.');
+    return false;
+  }
+  return true;
+}
+
+function ustawEtap(kolejka_pk) {
+  const etap = document.getElementById('etap-import-select').value;
+  document.getElementById('etap-hidden-' + kolejka_pk).value = etap;
+}
+
 function pokazKolejke(id, btn) {
   document.querySelectorAll('.szwajcar-panel').forEach(el => el.classList.add('d-none'));
   document.getElementById(id).classList.remove('d-none');

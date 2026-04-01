@@ -7,14 +7,36 @@
   <h2 class="fw-bold mb-1" style="color: var(--yellow); font-family: var(--font-display);">
     <i class="bi bi-shuffle me-2"></i>Losowanie ELO
   </h2>
-  <p style="color:#ccc;" class="mb-4">Wybierz graczy, przypisz do koszyków i wygeneruj harmonogram.</p>
+  <p style="color:#ccc;" class="mb-4">Wybierz turniej, przypisz graczy do koszyków i wygeneruj harmonogram.</p>
 
   {% if blad %}
   <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ blad }}</div>
   {% endif %}
 
-  <form method="post">
+  {# KROK 1 — wybór turnieju #}
+  <div class="card mb-4" style="background:var(--black-3); border:1px solid var(--black-5);">
+    <div class="card-header" style="background:var(--black-4); border-bottom:1px solid var(--black-5);">
+      <h6 class="mb-0 fw-bold" style="color:var(--yellow);"><i class="bi bi-trophy me-2"></i>Turniej</h6>
+    </div>
+    <div class="card-body">
+      <select id="turniej-select" class="form-select"
+              style="background:var(--black-5); border-color:#444; color:#eee;"
+              onchange="filtrujGraczy()">
+        <option value="">— wybierz turniej aby zobaczyć graczy —</option>
+        {% for t in turnieje %}
+        <option value="{{ t.pk }}"
+                data-gracze="{{ t.gracze_json }}"
+                {% if turniej_pk == t.pk|stringformat:"s" %}selected{% endif %}>
+          {{ t.nazwa }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <form method="post" id="form-losowanie">
     {% csrf_token %}
+    <input type="hidden" name="turniej" id="turniej-hidden">
 
     <!-- Ustawienia -->
     <div class="card mb-4" style="background:var(--black-3); border:1px solid var(--black-5);">
@@ -40,7 +62,16 @@
               </div>
               {% endfor %}
             </div>
-            <small style="color:#ccc;" class="d-block mt-1">Nieparzyste: R↔N &nbsp;|&nbsp; Parzyste: R↔R / N↔N</small>
+            <div style="color:#ccc; font-size:.8rem; line-height:1.6; margin-top:.4rem;">
+              <div><span style="color:var(--yellow);">Kolejki nieparzyste (1,3):</span> każdy gracz z R gra z graczem z N</div>
+              <div><span style="color:var(--yellow);">Kolejki parzyste (2,4):</span> R gra między sobą, N gra między sobą</div>
+              <div style="margin-top:.3rem; color:#aaa;">
+                <strong style="color:#ccc;">Liczba graczy:</strong>
+                przy parzystej łącznej liczbie R i N mogą być równe (np. 4+4).
+                Przy nieparzystej łącznej — R musi być o 1 większe od N (np. 5R+4N).
+                Gracz bez pary w danej kolejce dostaje wolny los (3 pkt).
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -55,18 +86,8 @@
             <span class="fw-bold text-white"><i class="bi bi-star-fill me-1"></i>Rozstawieni (R)</span>
             <span class="badge bg-dark" id="cnt-R">0</span>
           </div>
-          <div class="card-body p-2" style="max-height:380px; overflow-y:auto;">
-            {% for g in gracze %}
-            <div class="form-check px-3 py-1 rounded mb-1" style="cursor:pointer;">
-              <input class="form-check-input" type="checkbox" name="gracze_R"
-                     value="{{ g.pk }}" id="R{{ g.pk }}" onchange="odswiezLiczniki()">
-              <label class="form-check-label text-light w-100" for="R{{ g.pk }}" style="cursor:pointer;">
-                {{ g.display_name }}
-              </label>
-            </div>
-            {% empty %}
-            <p style="color:#aaa;" class="p-3 mb-0">Brak aktywnych graczy.</p>
-            {% endfor %}
+          <div class="card-body p-2" style="max-height:380px; overflow-y:auto;" id="lista-R">
+            <p style="color:#666;" class="p-3 mb-0 text-center">Wybierz turniej aby załadować graczy.</p>
           </div>
         </div>
       </div>
@@ -77,18 +98,8 @@
             <span class="fw-bold text-white"><i class="bi bi-person-fill me-1"></i>Nierozstawieni (N)</span>
             <span class="badge bg-dark" id="cnt-N">0</span>
           </div>
-          <div class="card-body p-2" style="max-height:380px; overflow-y:auto;">
-            {% for g in gracze %}
-            <div class="form-check px-3 py-1 rounded mb-1" style="cursor:pointer;">
-              <input class="form-check-input" type="checkbox" name="gracze_N"
-                     value="{{ g.pk }}" id="N{{ g.pk }}" onchange="odswiezLiczniki()">
-              <label class="form-check-label text-light w-100" for="N{{ g.pk }}" style="cursor:pointer;">
-                {{ g.display_name }}
-              </label>
-            </div>
-            {% empty %}
-            <p style="color:#aaa;" class="p-3 mb-0">Brak aktywnych graczy.</p>
-            {% endfor %}
+          <div class="card-body p-2" style="max-height:380px; overflow-y:auto;" id="lista-N">
+            <p style="color:#666;" class="p-3 mb-0 text-center">Wybierz turniej aby załadować graczy.</p>
           </div>
         </div>
       </div>
@@ -96,7 +107,8 @@
     </div>
 
     <button type="submit" class="btn btn-lg fw-bold px-5"
-            style="background:var(--yellow); color:#000; border:none;">
+            style="background:var(--yellow); color:#000; border:none;"
+            onclick="return sprawdzTurniej()">
       <i class="bi bi-shuffle me-2"></i>Generuj losowanie
     </button>
     <a href="{% url 'laczkerscup:losowanie_lista' %}" class="btn btn-outline-secondary btn-lg ms-2">
@@ -107,11 +119,63 @@
 </div>
 
 <script>
+// Dane graczy zakodowane w opcjach selecta — ładujemy po wyborze turnieju
+function filtrujGraczy() {
+  const sel     = document.getElementById('turniej-select');
+  const opt     = sel.options[sel.selectedIndex];
+  const turniej_pk = sel.value;
+
+  document.getElementById('turniej-hidden').value = turniej_pk;
+
+  if (!turniej_pk) {
+    ['R','N'].forEach(k => {
+      document.getElementById('lista-' + k).innerHTML =
+        '<p style="color:#666;" class="p-3 mb-0 text-center">Wybierz turniej aby załadować graczy.</p>';
+      document.getElementById('cnt-' + k).textContent = '0';
+    });
+    return;
+  }
+
+  const gracze = JSON.parse(opt.dataset.gracze || '[]');
+
+  ['R','N'].forEach(koszyk => {
+    const lista = document.getElementById('lista-' + koszyk);
+    if (gracze.length === 0) {
+      lista.innerHTML = '<p style="color:#aaa;" class="p-3 mb-0">Brak uczestników w turnieju.</p>';
+      return;
+    }
+    lista.innerHTML = gracze.map(g => `
+      <div class="form-check px-3 py-1 rounded mb-1" style="cursor:pointer;">
+        <input class="form-check-input" type="checkbox" name="gracze_${koszyk}"
+               value="${g.pk}" id="${koszyk}${g.pk}" onchange="odswiezLiczniki()">
+        <label class="form-check-label text-light w-100" for="${koszyk}${g.pk}" style="cursor:pointer;">
+          ${g.nazwa}
+        </label>
+      </div>`).join('');
+  });
+
+  odswiezLiczniki();
+}
+
 function odswiezLiczniki() {
   document.getElementById('cnt-R').textContent =
     document.querySelectorAll('input[name="gracze_R"]:checked').length;
   document.getElementById('cnt-N').textContent =
     document.querySelectorAll('input[name="gracze_N"]:checked').length;
 }
+
+function sprawdzTurniej() {
+  if (!document.getElementById('turniej-hidden').value) {
+    alert('Wybierz turniej przed wygenerowaniem losowania.');
+    return false;
+  }
+  return true;
+}
+
+// Jeśli turniej był już wybrany (np. po błędzie walidacji) — odśwież listę
+window.addEventListener('load', function() {
+  const sel = document.getElementById('turniej-select');
+  if (sel.value) filtrujGraczy();
+});
 </script>
 {% endblock %}

@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Max, Count
 from django.contrib import messages
 
-from .models import Turniej, Player, WystepGracza, Mecz, SzwajcarKolejka, SzwajcarPara
+from .models import Turniej, Etap, Player, WystepGracza, Mecz, SzwajcarKolejka, SzwajcarPara
 from .szwajcar_logika import generuj_pary, maks_kolejek
 
 
@@ -127,15 +127,23 @@ def szwajcar_formularz(request):
                     f"{request.path}?turniej={turniej.pk}"
                 )
 
+    # Etapy grupowe wybranego turnieju — do dropdownu importu
+    etapy_import = []
+    if turniej:
+        etapy_import = Etap.objects.filter(
+            turniej=turniej, typ='grupowy'
+        ).order_by('poziom', 'data_utworzenia')
+
     return render(request, 'laczkerscup/szwajcar.html', {
-        'turnieje':  turnieje,
-        'turniej':   turniej,
-        'tabela':    tabela,
-        'kolejki':          kolejki,
-        'maks':             maks,
-        'nastepna':         nastepna,
+        'turnieje':           turnieje,
+        'turniej':            turniej,
+        'tabela':             tabela,
+        'kolejki':            kolejki,
+        'maks':               maks,
+        'nastepna':           nastepna,
         'kolejki_w_turnieju': kolejki_w_turnieju if turniej else 0,
-        'blad':      blad,
+        'blad':               blad,
+        'etapy_import':       etapy_import,
     })
 
 
@@ -153,3 +161,58 @@ def szwajcar_usun_kolejke(request, pk):
         messages.error(request, 'Można usunąć tylko ostatnią kolejkę.')
 
     return redirect(f"/szwajcar/?turniej={turniej_pk}")
+
+
+@login_required
+def szwajcar_importuj(request, pk):
+    """
+    Importuje pary z jednej kolejki szwajcarskiej jako mecze zaplanowane.
+    Warunek: wszystkie poprzednie kolejki muszą być już zaimportowane.
+    """
+    kolejka = get_object_or_404(SzwajcarKolejka, pk=pk)
+    turniej = kolejka.turniej
+    etap    = get_object_or_404(Etap, pk=request.POST.get('etap'),
+                                turniej=turniej, typ='grupowy')
+
+    # Sprawdź czy już zaimportowana
+    if kolejka.zaimportowana:
+        messages.error(request, f'Kolejka {kolejka.numer} jest już zaimportowana.')
+        return redirect(f'/szwajcar/?turniej={turniej.pk}')
+
+    # Sprawdź czy poprzednie kolejki są zaimportowane
+    poprzednie_niezaimportowane = SzwajcarKolejka.objects.filter(
+        turniej=turniej,
+        numer__lt=kolejka.numer,
+        zaimportowana=False,
+    ).exists()
+
+    if poprzednie_niezaimportowane:
+        messages.error(request, f'Najpierw zaimportuj wcześniejsze kolejki.')
+        return redirect(f'/szwajcar/?turniej={turniej.pk}')
+
+    # Importuj pary jako mecze
+    data = turniej.data_start
+    for para in kolejka.pary.select_related('gracz_a', 'gracz_b'):
+        if para.gracz_b is None:
+            Mecz.objects.create(
+                turniej=turniej,
+                etap=etap,
+                gracz_a=para.gracz_a,
+                gracz_b=None,
+                status='wolny_los',
+                data=data,
+            )
+        else:
+            Mecz.objects.create(
+                turniej=turniej,
+                etap=etap,
+                gracz_a=para.gracz_a,
+                gracz_b=para.gracz_b,
+                status='zaplanowany',
+                data=data,
+            )
+
+    kolejka.zaimportowana = True
+    kolejka.save()
+
+    return redirect(f'/szwajcar/?turniej={turniej.pk}')

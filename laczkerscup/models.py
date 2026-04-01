@@ -90,6 +90,12 @@ class LosowanieELO(models.Model):
     nazwa          = models.CharField('Nazwa', max_length=100, blank=True)
     data           = models.DateTimeField('Data utworzenia', auto_now_add=True)
     liczba_kolejek = models.PositiveSmallIntegerField('Liczba kolejek')
+    turniej        = models.ForeignKey(
+        'Turniej', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='losowania',
+        verbose_name='Turniej',
+    )
 
     class Meta:
         verbose_name        = 'Losowanie ELO'
@@ -191,11 +197,16 @@ class Etap(models.Model):
         help_text='Jeśli zaznaczone, punkty gracza ze wszystkich etapów grupowych '
                   'o niższym poziomie w tym turnieju zostaną dodane jako punkty startowe.'
     )
+    data_utworzenia = models.DateTimeField(
+        'Data utworzenia',
+        auto_now_add=True,
+        help_text='Używana do sortowania etapów na tym samym poziomie.'
+    )
 
     class Meta:
         verbose_name        = 'Etap'
         verbose_name_plural = 'Etapy'
-        ordering            = ['turniej', 'poziom', 'nazwa']
+        ordering            = ['turniej', 'poziom', 'data_utworzenia']
 
     def __str__(self):
         return f'{self.turniej.nazwa} › {self.nazwa}'
@@ -388,6 +399,12 @@ class SzwajcarKolejka(models.Model):
                                         related_name='szwajcar_kolejki')
     numer           = models.PositiveSmallIntegerField('Numer kolejki')
     data_utworzenia = models.DateTimeField(auto_now_add=True)
+
+    zaimportowana = models.BooleanField(
+        'Zaimportowana',
+        default=False,
+        help_text='Czy pary z tej kolejki zostały zaimportowane jako mecze do turnieju.'
+    )
 
     class Meta:
         verbose_name        = 'Kolejka szwajcarska'

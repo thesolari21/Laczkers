@@ -18,9 +18,12 @@ urlpatterns = [
     # System szwajcarski
     path('szwajcar/',                       views.szwajcar_formularz, name='szwajcar'),
     path('szwajcar/usun/<int:pk>/',         views.szwajcar_usun_kolejke, name='szwajcar_usun'),
+    path('szwajcar/importuj/<int:pk>/',     views.szwajcar_importuj,     name='szwajcar_importuj'),
 
     # Losowanie ELO
     path('losowanie_elo/',                  views.losowanie_formularz, name='losowanie_formularz'),
     path('losowanie_elo/wyniki/<int:pk>/',  views.losowanie_wyniki,    name='losowanie_wyniki'),
     path('losowanie_elo/historia/',         views.losowanie_lista,     name='losowanie_lista'),
+    path('losowanie_elo/<int:pk>/importuj/', views.losowanie_importuj,  name='losowanie_importuj'),
+    path('losowanie_elo/etapy/',             views.losowanie_etapy_json, name='losowanie_etapy_json'),
 ]

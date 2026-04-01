@@ -6,11 +6,12 @@ Widoki Django dla modułu Losowanie ELO.
 Logika losowania jest w losowanie_logika.py.
 """
 
+import json
 from collections import defaultdict
 
 from django.shortcuts import render, redirect, get_object_or_404
 
-from .models import Player, LosowanieELO, UczestnikLosowania, MeczLosowania
+from .models import Player, LosowanieELO, UczestnikLosowania, MeczLosowania, Turniej, Etap, UczestnikTurnieju, Mecz
 from .losowanie_logika import losuj
 
 
@@ -38,10 +39,18 @@ def losowanie_formularz(request):
 
         if not blad:
             # Zapisz do bazy
+            turniej_pk_val = request.POST.get('turniej') or None
             los = LosowanieELO.objects.create(
                 nazwa=nazwa or f'Losowanie {len(ids_R) + len(ids_N)} graczy',
                 liczba_kolejek=liczba_kolejek,
             )
+            # Zapisz turniej do losowania jeśli model go obsługuje
+            if turniej_pk_val and hasattr(los, 'turniej'):
+                try:
+                    los.turniej = Turniej.objects.get(pk=turniej_pk_val)
+                    los.save()
+                except Turniej.DoesNotExist:
+                    pass
             for pid in ids_R:
                 UczestnikLosowania.objects.create(losowanie=los, gracz_id=pid, koszyk='R')
             for pid in ids_N:
@@ -57,13 +66,32 @@ def losowanie_formularz(request):
             return redirect('laczkerscup:losowanie_wyniki', pk=los.pk)
 
         # Błąd — wróć do formularza z komunikatem
+        turnieje = Turniej.objects.prefetch_related('uczestnicy__gracz').order_by('-data_start')
+        for t in turnieje:
+            t.gracze_json = json.dumps([
+                {'pk': u.gracz.pk, 'nazwa': u.gracz.display_name()}
+                for u in t.uczestnicy.select_related('gracz').order_by('gracz__last_name')
+            ], ensure_ascii=False)
         return render(request, 'laczkerscup/losowanie_formularz.html', {
-            'gracze': Player.objects.filter(is_active=True),
-            'blad':   blad,
+            'turnieje':   turnieje,
+            'turniej_pk': request.POST.get('turniej', ''),
+            'blad':       blad,
         })
 
+    turnieje = Turniej.objects.prefetch_related(
+        'uczestnicy__gracz'
+    ).order_by('-data_start')
+
+    # Dla każdego turnieju przygotuj listę graczy jako JSON (do filtrowania w JS)
+    for t in turnieje:
+        t.gracze_json = json.dumps([
+            {'pk': u.gracz.pk, 'nazwa': u.gracz.display_name()}
+            for u in t.uczestnicy.select_related('gracz').order_by('gracz__last_name')
+        ], ensure_ascii=False)
+
     return render(request, 'laczkerscup/losowanie_formularz.html', {
-        'gracze': Player.objects.filter(is_active=True),
+        'turnieje':  turnieje,
+        'turniej_pk': request.GET.get('turniej', ''),
     })
 
 
@@ -97,11 +125,21 @@ def losowanie_wyniki(request, pk):
         if m.gracz_b_id:
             mecze_gracza[m.gracz_b_id].append(m)
 
+    # Etapy grupowe powiązanego turnieju — do importu
+    turniej_los = getattr(los, 'turniej', None)
+    etapy_import = []
+    if turniej_los:
+        etapy_import = list(Etap.objects.filter(
+            turniej=turniej_los, typ='grupowy'
+        ).order_by('poziom', 'data_utworzenia'))
+
     return render(request, 'laczkerscup/losowanie_wyniki.html', {
         'los':          los,
         'uczestnicy':   uczestnicy,
         'kolejki':      dict(sorted(kolejki.items())),
         'mecze_gracza': dict(mecze_gracza),
+        'turniej':      turniej_los,
+        'etapy_import': etapy_import,
     })
 
 
@@ -112,3 +150,80 @@ def losowanie_lista(request):
     return render(request, 'laczkerscup/losowanie_lista.html', {
         'losowania': losowania,
     })
+
+
+@login_required
+def losowanie_importuj(request, pk):
+    """
+    Importuje wygenerowane pary jako mecze zaplanowane w wybranym etapie.
+    Turniej pochodzi z losowania — nie trzeba go wybierać ponownie.
+    Sprawdza czy etap nie ma już zaplanowanych meczów.
+    """
+    los     = get_object_or_404(LosowanieELO, pk=pk)
+    turniej = los.turniej if hasattr(los, 'turniej') and los.turniej else get_object_or_404(Turniej, pk=request.POST.get('turniej'))
+    etap    = get_object_or_404(Etap, pk=request.POST.get('etap'), turniej=turniej, typ='grupowy')
+
+    # Sprawdź czy etap ma już zaplanowane mecze
+    if Mecz.objects.filter(turniej=turniej, etap=etap, status='zaplanowany').exists():
+        mecze     = list(los.mecze.select_related('gracz_a', 'gracz_b'))
+        uczestnicy = list(los.uczestnicy.select_related('gracz'))
+        koszyk_gracza = {u.gracz_id: u.koszyk for u in uczestnicy}
+        for m in mecze:
+            m.koszyk_a = koszyk_gracza.get(m.gracz_a_id, 'N')
+            m.kolor_a  = '#1565C0' if m.koszyk_a == 'R' else '#2E7D32'
+            if m.gracz_b_id:
+                m.koszyk_b = koszyk_gracza.get(m.gracz_b_id, 'N')
+                m.kolor_b  = '#1565C0' if m.koszyk_b == 'R' else '#2E7D32'
+        from collections import defaultdict
+        kolejki = defaultdict(list)
+        for m in mecze:
+            kolejki[m.kolejka].append(m)
+        etapy_imp = list(Etap.objects.filter(turniej=turniej, typ='grupowy').order_by('poziom', 'data_utworzenia'))
+        return render(request, 'laczkerscup/losowanie_wyniki.html', {
+            'los':          los,
+            'uczestnicy':   uczestnicy,
+            'kolejki':      dict(sorted(kolejki.items())),
+            'mecze_gracza': {},
+            'blad_import':  f'Etap "{etap.nazwa}" ma już zaplanowane mecze. Usuń je ręcznie w adminie przed importem.',
+            'turniej':      turniej,
+            'etapy_import': etapy_imp,
+        })
+
+    # Importuj — utwórz mecze
+    data = turniej.data_start  # może być None — Django przyjmie null
+    for m in los.mecze.select_related('gracz_a', 'gracz_b').order_by('kolejka', 'id'):
+        if m.czy_bye:
+            Mecz.objects.create(
+                turniej=turniej,
+                etap=etap,
+                gracz_a=m.gracz_a,
+                gracz_b=None,
+                status='wolny_los',
+                data=data,
+            )
+        else:
+            Mecz.objects.create(
+                turniej=turniej,
+                etap=etap,
+                gracz_a=m.gracz_a,
+                gracz_b=m.gracz_b,
+                status='zaplanowany',
+                data=data,
+            )
+
+    return redirect('laczkerscup:turniej_detail', pk=turniej.pk)
+
+
+
+@login_required
+def losowanie_etapy_json(request):
+    """Zwraca etapy grupowe turnieju jako JSON — dla dynamicznego dropdownu."""
+    from django.http import JsonResponse
+    turniej_id = request.GET.get('turniej')
+    if not turniej_id:
+        return JsonResponse([], safe=False)
+    etapy = Etap.objects.filter(
+        turniej_id=turniej_id,
+        typ='grupowy'
+    ).order_by('poziom', 'data_utworzenia').values('id', 'nazwa')
+    return JsonResponse(list(etapy), safe=False)

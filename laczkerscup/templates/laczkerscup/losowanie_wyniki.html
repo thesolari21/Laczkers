@@ -160,6 +160,56 @@
 </div>
 
 <!-- Dane meczów per gracz dla JS -->
+{# ── PANEL IMPORTU ──────────────────────────────────────────────── #}
+<div class="container mb-4" style="max-width:960px;">
+  <div class="card-dark p-3">
+    <div class="card-dark-header mb-3" style="color:var(--yellow);">
+      <i class="bi bi-box-arrow-in-down me-2"></i>Importuj do turnieju
+    </div>
+
+    {% if blad_import %}
+    <div class="alert mb-3" style="background:#2a0000; border:1px solid #c0392b; color:#ff6b6b; border-radius:8px;">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ blad_import }}
+    </div>
+    {% endif %}
+
+    {% if turniej %}
+    <div class="mb-3" style="font-size:.88rem; color:#aaa;">
+      <i class="bi bi-trophy me-1" style="color:var(--yellow);"></i>
+      Turniej: <strong style="color:#eee;">{{ turniej.nazwa }}</strong>
+    </div>
+    <form method="post" action="{% url 'laczkerscup:losowanie_importuj' los.pk %}">
+      {% csrf_token %}
+      <div class="row g-3 align-items-end">
+        <div class="col-md-6">
+          <label class="form-label text-light fw-semibold mb-1">Etap grupowy</label>
+          <select name="etap" class="form-select"
+                  style="background:var(--black-5); border-color:#444; color:#eee;">
+            <option value="">— wybierz etap —</option>
+            {% for e in etapy_import %}
+            <option value="{{ e.pk }}">{{ e.nazwa }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn w-100 fw-bold"
+                  style="background:var(--yellow); color:#000; border:none;">
+            <i class="bi bi-box-arrow-in-down me-2"></i>Importuj
+          </button>
+        </div>
+      </div>
+      <div class="mt-2" style="font-size:.78rem; color:#666;">
+        Import tworzy mecze ze statusem "zaplanowany". Jeśli etap ma już zaplanowane mecze — import zostanie zablokowany.
+      </div>
+    </form>
+    {% else %}
+    <div style="color:#666; font-size:.85rem;">
+      <i class="bi bi-info-circle me-1"></i>To losowanie nie jest powiązane z turniejem — import niedostępny.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
 <script>
 const MECZE = {};
 {% for nr, mecze_kolejki in kolejki.items %}
@@ -237,5 +287,7 @@ function pokazWszystkie() {
   ukryjWszystko();
   document.getElementById('panel-wszystkie').classList.remove('d-none');
 }
+
+
 </script>
 {% endblock %}
