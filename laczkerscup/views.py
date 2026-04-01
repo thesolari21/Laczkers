@@ -127,19 +127,12 @@ def _tabela_grupowa(etap):
             else:
                 forma_raw[pid].append('P')
 
-    # Gracze którzy mają punkty startowe ale jeszcze nie grali w tym etapie
-    # — dodaj ich do wyników z zerami
-    gracz_ids_w_etapie = {row['gracz'] for row in wystepy}
-    gracze_tylko_startowe = {
-        pid for pid in punkty_startowe
-        if pid not in gracz_ids_w_etapie
-    }
-
+    # Tylko gracze którzy faktycznie grają w tym etapie dostają punkty startowe.
+    # Nie doklejamy obcych graczy z poprzednich grup.
     gracze = {p.pk: p for p in Player.objects.all()}
 
     wiersze = []
 
-    # Gracze z meczami w tym etapie
     for row in wystepy:
         pid   = row['gracz']
         gracz = gracze.get(pid)
@@ -161,25 +154,6 @@ def _tabela_grupowa(etap):
             'pkt_startowe':  pkt_start,
         })
 
-    # Gracze tylko z punktami startowymi (0 meczów w tym etapie)
-    for pid in gracze_tylko_startowe:
-        gracz = gracze.get(pid)
-        if not gracz:
-            continue
-        wiersze.append({
-            'gracz':         gracz,
-            'mecze':         0,
-            'wygrane':       0,
-            'remisy':        0,
-            'przegrane':     0,
-            'gole_za':       0,
-            'gole_str':      0,
-            'roznica':       0,
-            'forma':         [],
-            'punkty':        punkty_startowe[pid],
-            'pkt_startowe':  punkty_startowe[pid],
-        })
-
     # Sortowanie
     wiersze.sort(key=lambda r: (
         -r['punkty'],
@@ -197,7 +171,7 @@ def _wszystkie_etapy(turniej):
     Każdy wpis: {'poziom': int, 'etapy': [{'etap': Etap, 'wiersze': [...] lub None}]}
     Dla grupowych — liczymy tabelę. Dla pucharowych — tylko etap (obrazek).
     """
-    etapy = Etap.objects.filter(turniej=turniej).order_by('-poziom', 'nazwa')
+    etapy = Etap.objects.filter(turniej=turniej).order_by('-poziom', 'data_utworzenia')
 
     # Grupuj po poziomie (zachowaj kolejność od najwyższego)
     from collections import OrderedDict

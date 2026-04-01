@@ -191,11 +191,16 @@ class Etap(models.Model):
         help_text='Jeśli zaznaczone, punkty gracza ze wszystkich etapów grupowych '
                   'o niższym poziomie w tym turnieju zostaną dodane jako punkty startowe.'
     )
+    data_utworzenia = models.DateTimeField(
+        'Data utworzenia',
+        auto_now_add=True,
+        help_text='Używana do sortowania etapów na tym samym poziomie.'
+    )
 
     class Meta:
         verbose_name        = 'Etap'
         verbose_name_plural = 'Etapy'
-        ordering            = ['turniej', 'poziom', 'nazwa']
+        ordering            = ['turniej', 'poziom', 'data_utworzenia']
 
     def __str__(self):
         return f'{self.turniej.nazwa} › {self.nazwa}'
